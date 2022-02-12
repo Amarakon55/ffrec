@@ -26,7 +26,7 @@ The usage is very simple:
 * `$ cd ffrec`
 2. Uninstall FFRec using the Makefile
 * `# make uninstall`
-<!---
+
 ### Gentoo
 #### Installation
 ##### Latest Git Master (Bleeding Edge)
