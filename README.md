@@ -22,7 +22,7 @@ The usage is very simple:
 * `# make install`
 #### Uninstallation
 ##### Latest Git Master (Bleeding Edge)
-1. Change working directory to ffrec.
+1. Change working directory to *ffrec*.
 * `$ cd ffrec`
 2. Uninstall FFRec using the Makefile
 * `# make uninstall`
