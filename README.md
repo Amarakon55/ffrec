@@ -16,7 +16,7 @@ The usage is very simple:
 ##### Latest Git Master (Bleeding Edge)
 1. Git clone the repository.
 * `$ git clone https://github.com/Amarakon55/ffrec`
-2. Change working directory to ffrec.
+2. Change working directory to *ffrec*.
 * `$ cd ffrec`
 3. Install FFRec using the Makefile
 * `# make install`
