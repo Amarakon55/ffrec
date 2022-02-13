@@ -1,6 +1,6 @@
-# FFRec – FFmpeg Record
+# FFrec – FFmpeg Record
 
-FFRec is a simple posix script to record audio and/or display easily using FFmpeg.
+FFrec is a simple posix script to record audio and/or display easily using FFmpeg.
 The usage is very simple:
 * `$ ffrec --audio` or `$ ffrec -a` – record audio
 * `$ ffrec --display` or `$ ffrec -d` – record display
@@ -18,13 +18,13 @@ The usage is very simple:
 * `$ git clone https://github.com/Amarakon55/ffrec`
 2. Change working directory to *ffrec*.
 * `$ cd ffrec`
-3. Install FFRec using the Makefile
+3. Install FFrec using the Makefile
 * `# make install`
 #### Uninstallation
 ##### Latest Git Master (Bleeding Edge)
 1. Change working directory to *ffrec*.
 * `$ cd ffrec`
-2. Uninstall FFRec using the Makefile
+2. Uninstall FFrec using the Makefile
 * `# make uninstall`
 
 ### Gentoo
@@ -34,11 +34,11 @@ The usage is very simple:
 * `# eselect repository add amarlay git https://github.com/Amarakon55/amarlay`
 2. Sync my personal [Gentoo overlay](https://github.com/Amarakon55/amarlay) using `emerge`
 * `# emerge --sync amarlay`
-3. Emerge the FFRec package
+3. Emerge the FFrec package
 * `# emerge media-video/ffrec` or `# emerge ffrec`
 #### Uninstallation
 ##### Latest Git Master (Bleeding Edge)
-1. Unmerge the FFRec package
+1. Unmerge the FFrec package
 * `# emerge -c media-video/ffrec` or `# emerge -c ffrec`
 2. (Optional) Remove my overlay
 * `# eselect-repository remove -f amarlay`
