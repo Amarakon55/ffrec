@@ -1,15 +1,11 @@
 #!/bin/sh
 
 main() {
-	if [ -n "$1" ]; then
-	    parse_opts "$@"
-
-	    dir=~/.local/share/ffmpeg
-	    mon=":0.0+$(randr | awk -F '+' '{print $2","$3}')"
-	    opts=-c:v libx264 -r 60 -c:a flac -preset ultrafast
-	    size="$(randr | cut -d '+' -f1)"
-	    title="$(date | awk 'OFS="-" {print $4,$3,$2,$1,$5}' | tr '[:upper:]' '[:lower:]')"
-	fi
+	dir=~/.local/share/ffmpeg
+	mon=":0.0+$(randr | awk -F '+' '{print $2","$3}')"
+	opts="-c:v libx264 -r 60 -c:a flac -preset ultrafast"
+	size="$(randr | cut -d '+' -f1)"
+	title="$(date | awk 'OFS="-" {print $4,$3,$2,$1,$5}' | tr '[:upper:]' '[:lower:]')"
 
 	if [ -n "$audio" -a -n "$display" ]; then
 	    if [ ! -d $dir/Display ]; then
