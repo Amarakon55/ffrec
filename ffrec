@@ -1,44 +1,69 @@
 #!/bin/sh
 
 main() {
+	parse_opts "$@"
+
 	dir=~/.local/share/ffmpeg
 	mon=":0.0+$(randr | awk -F '+' '{print $2","$3}')"
 	opts="-c:v libx264 -r 60 -c:a flac -preset ultrafast"
 	size="$(randr | cut -d '+' -f1)"
 	title="$(date | awk 'OFS="-" {print $4,$3,$2,$1,$5}' | tr '[:upper:]' '[:lower:]')"
 
-	if [ -n "$audio" -a -n "$display" ]; then
-	    if [ ! -d $dir/Display ]; then
-		mkdir -p $dir/Display
+	if [ -n "$dmenu" ]; then
+	    cmd="$(printf 'audio\ndisplay' | dmenu -i -l 10 | tr '\n' ' ')"
+	    if [ "$cmd" = "audio " ]; then
+		record_audio
+	    elif [ "$cmd" = "display " ]; then
+		record_display
+	    elif [ "$cmd" = "audio display " ]; then
+		record_both
 	    fi
-		ffmpeg -n \
-			-f alsa \
-			-i default \
-			-f x11grab \
-			-s "$size" \
-			-i "$monitor" \
-			$opts \
-			$dir/Display/ffrec-$title.mkv
+
+	elif [ -n "$audio" -a -n "$display" ]; then
+	    record_both
 	elif [ -n "$audio" ]; then
-	    if [ ! -d $dir/Audio ]; then
-		mkdir -p $dir/Audio
-	    fi
-		ffmpeg -n \
-			-f alsa \
-			-i default \
-			$opts \
-			$dir/Audio/ffrec-$title.flac
+	    record_audio
 	elif [ -n "$display" ]; then
-	    if [ ! -d $dir/Display ]; then
-		mkdir -p $dir/Display
-	    fi
-		ffmpeg -n \
-			-f x11grab \
-			-s "$size" \
-			-i "$monitor" \
-			$opts \
-			$dir/Display/ffrec-$title.mkv
+	    record_display
 	fi
+}
+
+record_audio() {
+	if [ ! -d $dir/Audio ]; then
+	    mkdir -p $dir/Audio
+	fi
+	ffmpeg -n \
+		-f alsa \
+		-i default \
+		$opts \
+		"$dir/Audio/$title.flac"
+}
+
+record_display() {
+	if [ ! -d $dir/Display ]; then
+	    mkdir -p $dir/Display
+	fi
+	ffmpeg -n \
+		-f x11grab \
+		-s "$size" \
+		-i "$mon" \
+		$opts \
+		"$dir/Display/$title.mkv"
+}
+
+record_both() {
+	if [ ! -d $dir/Display ]; then
+	    mkdir -p $dir/Display
+	fi
+	ffmpeg -n \
+	-f alsa \
+	-i default \
+	-f x11grab \
+	-s "$size" \
+	-i "$mon" \
+	$opts \
+	"$dir/Display/$title.mkv"
+
 }
 
 randr() {
@@ -51,6 +76,10 @@ parse_opts() {
     while [ $# -gt 0 ]; do
         key="$1"
         case $key in
+	-D|--dmenu)
+	    dmenu=1
+	    shift
+	    ;;
         -a|--audio)
             audio=1
             shift
