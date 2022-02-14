@@ -6,9 +6,15 @@ The usage is very simple:
 * `$ ffrec --display` or `$ ffrec -d` – record display
 * `$ ffrec --audio --display` or `$ffrec -ad` – record audio and display
 
+With Dmenu:
+* `$ ffrec --dmenu` or `$ffrec -D` – choose what to record in a Dmenu prompt
+
 ## Dependencies
+### Mandatory
 1. ffmpeg
 1. xrandr
+### Optional
+1. dmenu
 
 ## (Un)Installation
 ### Universal
