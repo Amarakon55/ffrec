@@ -44,3 +44,6 @@ The usage is very simple:
 * `# eselect-repository remove -f amarlay`
 3. (Optional) Sync using `emerge`
 * `# emerge --sync`
+
+# Credit
+Credit goes to [u/two-bit-hack](https://www.reddit.com/user/two-bit-hack/) on [Reddit](https://reddit.com) for helping me add options to this script.
