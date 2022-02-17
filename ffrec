@@ -9,8 +9,8 @@ main() {
 	title="$(date | awk 'OFS="-" {print $4,$3,$2,$1,$5}' | tr '[:upper:]' '[:lower:]')"
 
 	if [ -n "$pause" ]; then
-	    ffmpegcheck="$(ps axch | grep ffmpeg | grep -v ffmpeg-status | wc -l)"
-	    ffmpegcheckid="$(ps axch | grep ffmpeg | grep -v ffmpeg-status | awk '{print $1}')"
+	    ffmpegcheck="$(pgrep ffmpeg | wc -l)"
+	    ffmpegcheckid="$(pgrep ffmpeg | tail -1)"
 	    
 	    [ "$ffmpegcheck" -ge 1 ] && ffmpegpause="$(grep State /proc/$ffmpegcheckid/status | cut -d '(' -f2 | cut -d ')' -f1)"
 
