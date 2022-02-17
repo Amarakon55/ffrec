@@ -8,7 +8,20 @@ main() {
 	size="$(randr | cut -d '+' -f1)"
 	title="$(date | awk 'OFS="-" {print $4,$3,$2,$1,$5}' | tr '[:upper:]' '[:lower:]')"
 
-	if [ -n "$dmenu" ]; then
+	if [ -n "$pause" ]; then
+	    ffmpegcheck="$(ps axch | grep ffmpeg | grep -v ffmpeg-status | wc -l)"
+	    ffmpegcheckid="$(ps axch | grep ffmpeg | grep -v ffmpeg-status | awk '{print $1}')"
+	    
+	    [ "$ffmpegcheck" -ge 1 ] && ffmpegpause="$(grep State /proc/$ffmpegcheckid/status | cut -d '(' -f2 | cut -d ')' -f1)"
+
+	    if [ "$ffmpegpause" = "stopped" ]; then
+		pkill -CONT ffmpeg
+	    else
+		pkill -STOP ffmpeg
+	    fi
+	elif [ -n "$end" ]; then
+	    pkill -STOP ffmpeg; pkill ffmpeg && pkill -CONT ffmpeg
+	elif [ -n "$dmenu" ]; then
 	    cmd="$(printf 'audio\ndisplay' | dmenu -i -p 'FFrec' | tr '\n' ' ')"
 	    if [ "$cmd" = "audio " ]; then
 		record_audio
@@ -74,7 +87,15 @@ randr() {
 parse_opts() {
     while [ $# -gt 0 ]; do
         key="$1"
-        case $key in
+	case $key in
+	-p|--pause)
+	    pause=1
+	    shift
+	    ;;
+	-e|--end)
+	    end=1
+	    shift
+	    ;;
 	-D|--dmenu)
 	    dmenu=1
 	    shift
