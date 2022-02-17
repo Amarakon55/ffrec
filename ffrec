@@ -9,7 +9,7 @@ main() {
 	title="$(date | awk 'OFS="-" {print $4,$3,$2,$1,$5}' | tr '[:upper:]' '[:lower:]')"
 
 	if [ -n "$dmenu" ]; then
-	    cmd="$(printf 'audio\ndisplay' | dmenu -i -p 'ffrec' | tr '\n' ' ')"
+	    cmd="$(printf 'audio\ndisplay' | dmenu -i -p 'FFrec' | tr '\n' ' ')"
 	    if [ "$cmd" = "audio " ]; then
 		record_audio
 	    elif [ "$cmd" = "display " ]; then
