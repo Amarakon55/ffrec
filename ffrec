@@ -6,7 +6,7 @@ main() {
 	mon=":0.0+$(randr | awk -F '+' '{print $2","$3}')"
 	opts="-c:v libx264 -r 60 -c:a flac -preset ultrafast"
 	size="$(randr | cut -d '+' -f1)"
-	title="$(date | awk 'OFS="-" {print $4,$3,$2,$1,$5}' | tr '[:upper:]' '[:lower:]')"
+	title="ffmpeg-$(date +'%Y-%b-%d-%a-%R:%S' | tr '[:upper:]' '[:lower:]')"
 
 	if [ -n "$pause" ]; then
 	    ffmpegcheck="$(pgrep ffmpeg | wc -l)"
