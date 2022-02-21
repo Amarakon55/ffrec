@@ -1,4 +1,5 @@
 #!/bin/sh
+
 main() {
 	parse_opts "$@"
 
@@ -8,7 +9,9 @@ main() {
 	size="$(randr | cut -d '+' -f1)"
 	title="ffmpeg-$(date +'%Y-%b-%d-%a-%R:%S' | tr '[:upper:]' '[:lower:]')"
 
-	if [ -n "$pause" ]; then
+	if [ -n "$help" ]; then
+	    help
+	elif [ -n "$pause" ]; then
 	    ffmpegcheck="$(pgrep ffmpeg | wc -l)"
 	    ffmpegcheckid="$(pgrep ffmpeg | tail -1)"
 	    
@@ -37,57 +40,51 @@ main() {
 	    record_audio
 	elif [ -n "$display" ]; then
 	    record_display
+	else
+	    help
 	fi
 }
 
 record_audio() {
-	if [ ! -d $dir/Audio ]; then
-	    mkdir -p $dir/Audio
-	fi
-	ffmpeg -n \
-		-f alsa \
-		-i default \
-		$opts \
-		"$dir/Audio/$title.flac"
+    [ ! -d $dir/Audio ] && mkdir -p $dir/Audio
+    ffmpeg -n -f alsa -i default $opts "$dir/Audio/$title.flac"
 }
 
 record_display() {
-	if [ ! -d $dir/Display ]; then
-	    mkdir -p $dir/Display
-	fi
-	ffmpeg -n \
-		-f x11grab \
-		-s "$size" \
-		-i "$mon" \
-		$opts \
-		"$dir/Display/$title.mkv"
+    [ ! -d $dir/Display ] && mkdir -p $dir/Display
+    ffmpeg -n -f x11grab -s "$size" -i "$mon" $opts "$dir/Display/$title.mkv"
 }
 
 record_both() {
-	if [ ! -d $dir/Display ]; then
-	    mkdir -p $dir/Display
-	fi
-	ffmpeg -n \
-	-f alsa \
-	-i default \
-	-f x11grab \
-	-s "$size" \
-	-i "$mon" \
-	$opts \
-	"$dir/Display/$title.mkv"
-
+    [ ! -d $dir/Display ] && mkdir -p $dir/Display
+    ffmpeg -n -f alsa -i default -f x11grab -s "$size" -i "$mon" $opts "$dir/Display/$title.mkv"
 }
 
 randr() {
-	xrandr |
-		grep primary |
-		cut -d ' ' -f4
+    xrandr | grep primary | cut -d ' ' -f 4
+}
+
+help() {
+    printf "Usage:	ffrec [option]
+
+Options:
+-a|--audio   │ Record audio
+-d|--display │ Record display
+-D|--dmenu   │ Use Dmenu to choose what to record
+-p|--pause   │ Pause the recording
+-e|--end     │ End the recording
+-h|--help    │ Print this help message and exit
+\n"
 }
 
 parse_opts() {
     while [ $# -gt 0 ]; do
         key="$1"
 	case $key in
+	-h|--help)
+	    help=1
+	    shift
+	    ;;
 	-p|--pause)
 	    pause=1
 	    shift
