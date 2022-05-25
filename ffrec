@@ -60,6 +60,16 @@ record_both() {
     ffmpeg -n -f alsa -i default -f x11grab -s "$size" -i "$mon" $opts "$dir/Display/$title.mkv"
 }
 
+record_webcam(){
+    [ ! -d $dir/Webcam ] && mkdir -p $dir/Webcam
+    ffmpeg -n -f v4l2 -i /dev/video0 $opts "$dir/Webcam/$title.mkv"
+}
+
+record_audiocam(){
+    [ ! -d $dir/Webcam ] && mkdir -p $dir/Webcam
+    ffmpeg -n -f alsa -i default -f v4l2 -i /dev/video0 $opts "$dir/Webcam/$title.mkv"
+}
+
 randr() {
     xrandr | grep primary | cut -d ' ' -f 4
 }
@@ -108,6 +118,15 @@ parse_opts() {
 	-ad|-da)
 	    audio=1
 	    display=1
+	    shift
+	    ;;
+	-w|--webcam)
+	    webcam=1
+	    shift
+	    ;;
+	-aw|-wa)
+	    audio=1
+	    webcam=1
 	    shift
 	    ;;
         *)
