@@ -1,11 +1,13 @@
 #!/bin/sh
 
 main() {
-	parse_opts "$@"
+	parse_ffmpeg_opts "$@"
 
 	dir=~/.local/share/ffmpeg
 	mon=":0.0+$(randr | awk -F '+' '{print $2","$3}')"
-	opts="-c:v libx264 -r 60 -c:a flac -preset ultrafast"
+	[ -z $FFMPEG_AUDIO_EXT ] && FFMPEG_AUDIO_EXT="flac"
+	[ -z $FFMPEG_OPTS ] && FFMPEG_OPTS="-c:v libx264 -r 60 -c:a $FFMPEG_AUDIO_EXT -preset ultrafast"
+	[ -z $FFMPEG_DISPLAY_EXT ] && FFMPEG_DISPLAY_EXT="mkv"
 	size="$(randr | cut -d '+' -f1)"
 	title="ffmpeg-$(date +'%Y-%m-%d_%R:%S')"
 
@@ -25,13 +27,15 @@ main() {
 	elif [ -n "$end" ]; then
 	    pkill -STOP ffmpeg; pkill ffmpeg && pkill -CONT ffmpeg
 	elif [ -n "$dmenu" ]; then
-	    cmd="$(printf 'audio\ndisplay' | dmenu -i -p 'FFrec' | tr '\n' ' ')"
+	    cmd="$(printf 'audio\ndisplay\nwebcam' | dmenu -i -p 'FFrec' | tr '\n' ' ')"
 	    if [ "$cmd" = "audio " ]; then
 		record_audio
 	    elif [ "$cmd" = "display " ]; then
 		record_display
 	    elif [ "$cmd" = "audio display " ]; then
 		record_both
+	    elif [ "$cmd" = "webcam " ]; then
+		record_webcam
 	    fi
 
 	elif [ -n "$audio" -a -n "$display" ]; then
@@ -40,6 +44,8 @@ main() {
 	    record_audio
 	elif [ -n "$display" ]; then
 	    record_display
+	elif [ -n "$webcam" ]; then
+	    record_webcam
 	else
 	    help
 	fi
@@ -47,27 +53,27 @@ main() {
 
 record_audio() {
     [ ! -d $dir/Audio ] && mkdir -p $dir/Audio
-    ffmpeg -n -f alsa -i default $opts "$dir/Audio/$title.flac"
+    ffmpeg -n -f alsa -i default $opts "$dir/Audio/$title.$FFMPEG_AUDIO_EXT"
 }
 
 record_display() {
     [ ! -d $dir/Display ] && mkdir -p $dir/Display
-    ffmpeg -n -f x11grab -s "$size" -i "$mon" $opts "$dir/Display/$title.mkv"
+    ffmpeg -n -f x11grab -s "$size" -i "$mon" $FFMPEG_OPTS "$dir/Display/$title.$FFMPEG_DISPLAY_EXT"
 }
 
 record_both() {
     [ ! -d $dir/Display ] && mkdir -p $dir/Display
-    ffmpeg -n -f alsa -i default -f x11grab -s "$size" -i "$mon" $opts "$dir/Display/$title.mkv"
+    ffmpeg -n -f alsa -i default -f x11grab -s "$size" -i "$mon" $FFMPEG_OPTS "$dir/Display/$title.$FFMPEG_DISPLAY_EXT"
 }
 
 record_webcam(){
     [ ! -d $dir/Webcam ] && mkdir -p $dir/Webcam
-    ffmpeg -n -f v4l2 -i /dev/video0 $opts "$dir/Webcam/$title.mkv"
+    ffmpeg -n -f v4l2 -i /dev/video0 $FFMPEG_OPTS "$dir/Webcam/$title.$FFMPEG_DISPLAY_EXT"
 }
 
 record_audiocam(){
     [ ! -d $dir/Webcam ] && mkdir -p $dir/Webcam
-    ffmpeg -n -f alsa -i default -f v4l2 -i /dev/video0 $opts "$dir/Webcam/$title.mkv"
+    ffmpeg -n -f alsa -i default -f v4l2 -i /dev/video0 $FFMPEG_OPTS "$dir/Webcam/$title.$FFMPEG_DISPLAY_EXT"
 }
 
 randr() {
@@ -80,6 +86,7 @@ help() {
 Options:
 -a|--audio   │ Record audio
 -d|--display │ Record display
+-w|--webcam  │ Record webcam
 -D|--dmenu   │ Use Dmenu to choose what to record
 -p|--pause   │ Pause the recording
 -e|--end     │ End the recording
@@ -87,7 +94,7 @@ Options:
 \n"
 }
 
-parse_opts() {
+parse_ffmpeg_opts() {
     while [ $# -gt 0 ]; do
         key="$1"
 	case $key in
