@@ -4,10 +4,11 @@ FFRec is a simple posix script to record audio and/or display easily using FFmpe
 The usage is very simple:
 * `$ ffrec --audio` or `$ ffrec -a` – record audio
 * `$ ffrec --display` or `$ ffrec -d` – record display
-* `$ ffrec --audio --display` or `$ffrec -ad` – record audio and display
+* `$ ffrec --audio --display` or `$ ffrec -ad` – record audio and display
+* `$ ffrec --webcam` or `$ ffrec -w` – record webcam
 
 With Dmenu:
-* `$ ffrec --dmenu` or `$ffrec -D` – choose what to record in a Dmenu prompt
+* `$ ffrec --dmenu` or `$ ffrec -D` – choose what to record in a Dmenu prompt
 
 ## Dependencies
 ### Mandatory
@@ -51,5 +52,17 @@ With Dmenu:
 3. (Optional) Sync using `emerge`
 * `# emerge --sync`
 
-# Credit
+## Configuration
+
+FFRec is configured by environmental variables.
+You can set these options in your `~/.bashrc` or any other file that your default shell sources:
+
+```sh
+FFMPEG_DISPLAY_EXT="mkv" # The default file extension for display and webcam recording
+FFMPEG_AUDIO_EXT="flac" # The default file extension for audio recording
+FFMPEG_OPTS="-c:v libx264 -r 60 -c:a $FFMPEG_AUDIO_EXT -preset ultrafast" # The default options to pass to FFmpeg
+```
+
+## Credit
+
 Credit goes to [u/two-bit-hack](https://www.reddit.com/user/two-bit-hack/) on [Reddit](https://reddit.com) for helping me add options to this script.
