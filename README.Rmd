@@ -1,24 +1,16 @@
-FFRec – FFmpeg Record
-================
+---
+title: FFRec – FFmpeg Record
+output: amaryaml::github
+---
 
-## Contents
+FFRec is a simple posix script to record audio and/or display easily using FFmpeg.
+It is a simple alternative to OBS.
+It supports Dmenu selection.
+And it is easier to use than plain FFmpeg.
 
--   [Usage](#usage)
--   [Dependencies](#dependencies)
--   [Installation](#installation)
-    -   [Universal](#universal)
-    -   [Gentoo](#gentoo)
--   [Uninstallation](#uninstallation)
-    -   [Universal](#universal-1)
-    -   [Gentoo](#gentoo-1)
+# Usage
 
-FFRec is a simple posix script to record audio and/or display easily
-using FFmpeg. It is a simple alternative to OBS. It supports Dmenu
-selection. And it is easier to use than plain FFmpeg.
-
-## Usage
-
-``` sh
+```sh
 `# user` ffrec --audio # record audio
 `# user` ffrec --display # record display
 `# user` ffrec --audio --display` # record audio and display
@@ -27,42 +19,42 @@ selection. And it is easier to use than plain FFmpeg.
 `# user` ffrec --dmenu # choose what to record in a Dmenu prompt
 ```
 
-## Dependencies
+# Dependencies
 
-1.  FFmpeg
-2.  Xrandr
-3.  Dmenu (menu selection)
+#. FFmpeg
+#. Xrandr
+#. Dmenu (menu selection)
 
-## Installation
+# Installation
 
-### Universal
+## Universal
 
-``` sh
+```sh
 `# user` git clone https://github.com/amarakon/ffrec
 `# user` cd ffrec
 `# root` make install
 ```
 
-### Gentoo
+## Gentoo
 
-``` sh
+```sh
 `# root` eselect repository add amarlay git https://github.com/amarakon/amarlay
 `# root` emerge --sync amarlay
 `# root` emerge media-video/ffrec
 ```
 
-## Uninstallation
+# Uninstallation
 
-### Universal
+## Universal
 
-``` sh
+```sh
 `# user` cd ffrec
 `# root` make uninstall
 ```
 
-### Gentoo
+## Gentoo
 
-``` sh
+```sh
 `# root` emerge -c media-video/ffrec
 # Remove my overlay (optional)
 `# root` eselect-repository remove -f amarlay
