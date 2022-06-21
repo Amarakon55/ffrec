@@ -3,13 +3,15 @@
 main() {
 	parse_ffmpeg_opts "$@"
 
-	dir=~/.local/share/ffmpeg
+	dir=~/.local/share/ffrec
 	mon=":0.0+$(randr | awk -F '+' '{print $2","$3}')"
 	[ -z $FFMPEG_AUDIO_EXT ] && FFMPEG_AUDIO_EXT="flac"
-	[ -z $FFMPEG_OPTS ] && FFMPEG_OPTS="-c:v libx264 -r 60 -c:a $FFMPEG_AUDIO_EXT -preset ultrafast"
+	[ -z $FFMPEG_OPTS ] && FFMPEG_OPTS="-hide_banner -c:v libx264 -r 60 -c:a $FFMPEG_AUDIO_EXT -preset ultrafast"
 	[ -z $FFMPEG_DISPLAY_EXT ] && FFMPEG_DISPLAY_EXT="mkv"
 	size="$(randr | cut -d '+' -f1)"
 	title="ffmpeg-$(date +'%Y-%m-%d_%R:%S')"
+	trap 'rm -f "$TMPFILE"' EXIT
+        TMPFILE=$(mktemp -t $title.XXXXXXX) || exit 1
 
 	if [ -n "$help" ]; then
 	    help
@@ -58,7 +60,7 @@ record_audio() {
 
 record_display() {
     [ ! -d $dir/Display ] && mkdir -p $dir/Display
-    ffmpeg -n -f x11grab -s "$size" -i "$mon" $FFMPEG_OPTS "$dir/Display/$title.$FFMPEG_DISPLAY_EXT"
+    ffmpeg -n -f x11grab -s "$size" -i "$mon" $FFMPEG_OPTS "$dir/Display/$title.$FFMPEG_DISPLAY_EXT" 2> $TMPFILE
 }
 
 record_both() {
