@@ -4,11 +4,11 @@ main() {
 	parse_ffmpeg_opts "$@"
 
 	dir=~/.local/share/ffrec
-	mon=":0.0+$(randr | awk -F '+' '{print $2","$3}')"
+	mon=":0.0+$(xrandr | grep primary | awk -F '+' '{print $2","$3}' | cut -d ' ' -f 1)"
 	[ -z $FFMPEG_AUDIO_EXT ] && FFMPEG_AUDIO_EXT="flac"
 	[ -z $FFMPEG_OPTS ] && FFMPEG_OPTS="-hide_banner -c:v libx264 -r 60 -c:a $FFMPEG_AUDIO_EXT -preset ultrafast"
 	[ -z $FFMPEG_DISPLAY_EXT ] && FFMPEG_DISPLAY_EXT="mkv"
-	size="$(randr | cut -d '+' -f1)"
+	size="$(xrandr | grep primary | cut -d ' ' -f 4 | cut -d + -f 1)"
 	title="ffmpeg-$(date +'%Y-%m-%d_%R:%S')"
 	trap 'rm -f "$TMPFILE"' EXIT
         TMPFILE=$(mktemp -t $title.XXXXXXX) || exit 1
@@ -38,10 +38,14 @@ main() {
 		record_both
 	    elif [ "$cmd" = "webcam " ]; then
 		record_webcam
+	    elif [ "$cmd" = "audio webcam " ]; then
+		record_audiocam
 	    fi
 
 	elif [ -n "$audio" -a -n "$display" ]; then
 	    record_both
+	elif [ -n "$audio" -a -n "$webcam" ]; then
+	    record_audiocam
 	elif [ -n "$audio" ]; then
 	    record_audio
 	elif [ -n "$display" ]; then
