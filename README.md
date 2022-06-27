@@ -27,6 +27,8 @@ selection. And it is easier to use than plain FFmpeg.
 `# user` ffrec --dmenu # choose what to record in a Dmenu prompt
 ```
 
+For more details, run `` `#user` ffrec --help ``.
+
 ## Dependencies
 
 1.  FFmpeg
