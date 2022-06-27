@@ -1,112 +1,149 @@
 #!/bin/sh
 
 main() {
-	parse_ffmpeg_opts "$@"
+    parse_ffmpeg_opts "$@"
 
-	dir=~/.local/share/ffrec
-	mon=":0.0+$(xrandr | grep primary | awk -F '+' '{print $2","$3}' | cut -d ' ' -f 1)"
-	[ -z $FFMPEG_AUDIO_EXT ] && FFMPEG_AUDIO_EXT="flac"
-	[ -z $FFMPEG_OPTS ] && FFMPEG_OPTS="-hide_banner -c:v libx264 -r 60 -c:a $FFMPEG_AUDIO_EXT -preset ultrafast"
-	[ -z $FFMPEG_DISPLAY_EXT ] && FFMPEG_DISPLAY_EXT="mkv"
-	size="$(xrandr | grep primary | cut -d ' ' -f 4 | cut -d + -f 1)"
-	title="ffmpeg-$(date +'%Y-%m-%d_%R:%S')"
-	trap 'rm -f "$TMPFILE"' EXIT
-        TMPFILE=$(mktemp -t $title.XXXXXXX) || exit 1
+    ffmpegcheck="$(pgrep -f ffmpeg | wc -l)"
+    ffmpegcheckid="$(pgrep -f ffmpeg | tail -1)"
 
-	if [ -n "$help" ]; then
-	    help
-	elif [ -n "$pause" ]; then
-	    ffmpegcheck="$(pgrep ffmpeg | wc -l)"
-	    ffmpegcheckid="$(pgrep ffmpeg | tail -1)"
-	    
-	    [ "$ffmpegcheck" -ge 1 ] && ffmpegpause="$(grep State /proc/$ffmpegcheckid/status | cut -d '(' -f2 | cut -d ')' -f1)"
+    [ -z $FFMPEG_AUDIO_EXT ] && FFMPEG_AUDIO_EXT="flac"
+    [ -z $FFMPEG_OPTS ] && FFMPEG_OPTS="-hide_banner -c:v libx264 -r 60 -c:a $FFMPEG_AUDIO_EXT -preset ultrafast"
+    [ -z $FFMPEG_DISPLAY_EXT ] && FFMPEG_DISPLAY_EXT="mkv"
 
-	    if [ "$ffmpegpause" = "stopped" ]; then
-		pkill -CONT ffmpeg
-	    else
-		pkill -STOP ffmpeg
-	    fi
-	elif [ -n "$end" ]; then
-	    pkill -STOP ffmpeg; pkill ffmpeg && pkill -CONT ffmpeg
-	elif [ -n "$dmenu" ]; then
-	    cmd="$(printf 'audio\ndisplay\nwebcam' | dmenu -i -p 'FFrec' | tr '\n' ' ')"
-	    if [ "$cmd" = "audio " ]; then
-		record_audio
-	    elif [ "$cmd" = "display " ]; then
-		record_display
-	    elif [ "$cmd" = "audio display " ]; then
-		record_both
-	    elif [ "$cmd" = "webcam " ]; then
-		record_webcam
-	    elif [ "$cmd" = "audio webcam " ]; then
-		record_audiocam
-	    fi
+    { [ -n "$location" ] && dir=$location_argument; } ||
+    { dir=~/.local/share/ffrec; }
 
-	elif [ -n "$audio" -a -n "$display" ]; then
-	    record_both
-	elif [ -n "$audio" -a -n "$webcam" ]; then
-	    record_audiocam
-	elif [ -n "$audio" ]; then
+    { [ -n "$title" ] && title="$title_argument"; } ||
+    { title="ffmpeg-$(date +'%Y-%m-%d_%R:%S')"; }
+
+    { [ -n "$monitor" ] && mon=`randr $monitor_argument`; } ||
+    { mon=$(randr $(printmon)); }
+
+    { [ -n "$size" ] && size=$size_argument ; } ||
+    { size="$(xrandr | grep primary | cut -d ' ' -f 4 | cut -d + -f 1)"; }
+
+    if [ -n "$help" ]; then
+        help
+    elif [ -n "$pause" ]; then
+        [ "$ffmpegcheck" -ge 1 ] && ffmpegpause="$(grep State /proc/$ffmpegcheckid/status | cut -d '(' -f2 | cut -d ')' -f1)"
+        if [ "$ffmpegpause" = "stopped" ]; then
+	   pkill -f -CONT ffmpeg
+        else
+	   pkill -f -STOP ffmpeg
+        fi
+    elif [ -n "$end" ]; then
+        pkill -f ffmpeg
+    elif [ -n "$dmenu" ]; then
+	dmenu="$(printf 'audio\ndisplay\nwebcam' | dmenu -i -p FFRec)"
+	if [ "$dmenu" = "audio" ]; then
 	    record_audio
-	elif [ -n "$display" ]; then
+	elif [ "$dmenu" = "display" ]; then
 	    record_display
-	elif [ -n "$webcam" ]; then
+	elif [ `printf "$dmenu" | grep -E "audio|display" | wc -l` -eq 2 ]; then
+	    record_both
+	elif [ "$dmenu" = "webcam" ]; then
 	    record_webcam
-	else
-	    help
+	elif [ `printf "$dmenu" | grep -E "audio|webcam" | wc -l` -eq 2 ]; then
+	    record_audiocam
 	fi
+
+    elif [ -n "$audio" -a -n "$display" ]; then
+	record_both
+    elif [ -n "$audio" -a -n "$webcam" ]; then
+	record_audiocam
+    elif [ -n "$audio" ]; then
+	record_audio
+    elif [ -n "$display" ]; then
+        record_display
+    elif [ -n "$webcam" ]; then
+        record_webcam
+    else
+        help
+    fi
+}
+
+record_base() {
+    rm -f /tmp/ffmpeg-*
+    TMPFILE=$(mktemp -t $title.XXXXXXX) || exit 1
+
+    [ ! -d $dir/$1 ] && mkdir -p $dir/$1
+    cmd $FFMPEG_OPTS "$dir/$1/$title.$2" 2> $TMPFILE &\
+    while true; do
+	printf "\r`cat -A $TMPFILE | tr ' ' '\n' | grep time= | tail -1 | awk -F time= {'print $2'} | cut -d '.' -f 1`"
+	sleep 0.001
+    done
 }
 
 record_audio() {
-    [ ! -d $dir/Audio ] && mkdir -p $dir/Audio
-    ffmpeg -n -f alsa -i default $opts "$dir/Audio/$title.$FFMPEG_AUDIO_EXT"
+    cmd() { ffmpeg -n -f alsa -i default "$@"; }
+    record_base Audio $FFMPEG_AUDIO_EXT
 }
 
 record_display() {
-    [ ! -d $dir/Display ] && mkdir -p $dir/Display
-    ffmpeg -n -f x11grab -s "$size" -i "$mon" $FFMPEG_OPTS "$dir/Display/$title.$FFMPEG_DISPLAY_EXT" 2> $TMPFILE
+    cmd() { ffmpeg -n -f x11grab -s "$size" -i "$mon" "$@"; }
+    record_base Display $FFMPEG_DISPLAY_EXT
 }
 
 record_both() {
-    [ ! -d $dir/Display ] && mkdir -p $dir/Display
-    ffmpeg -n -f alsa -i default -f x11grab -s "$size" -i "$mon" $FFMPEG_OPTS "$dir/Display/$title.$FFMPEG_DISPLAY_EXT"
+    cmd() { ffmpeg -n -f alsa -i default -f x11grab -s "$size" -i "$mon" "$@"; }
+    record_base Display $FFMPEG_DISPLAY_EXT
 }
 
 record_webcam(){
-    [ ! -d $dir/Webcam ] && mkdir -p $dir/Webcam
-    ffmpeg -n -f v4l2 -i /dev/video0 $FFMPEG_OPTS "$dir/Webcam/$title.$FFMPEG_DISPLAY_EXT"
+    cmd() { ffmpeg -n -f v4l2 -i /dev/video0 "$@"; }
+    record_base Webcam $FFMPEG_DISPLAY_EXT
 }
 
 record_audiocam(){
-    [ ! -d $dir/Webcam ] && mkdir -p $dir/Webcam
-    ffmpeg -n -f alsa -i default -f v4l2 -i /dev/video0 $FFMPEG_OPTS "$dir/Webcam/$title.$FFMPEG_DISPLAY_EXT"
+    cmd() { ffmpeg -n -f alsa -i default -f v4l2 -i /dev/video0 "$@"; }
+    record_base Webcam $FFMPEG_DISPLAY_EXT
 }
 
-randr() {
-    xrandr | grep primary | cut -d ' ' -f 4
-}
+randr() { printf ":0.0+$(xrandr | grep ' connected' | sed 's/ primary//g' | tail -$(expr $@ + 1) | head -1 | awk -F '+' '{print $2","$3}' | cut -d ' ' -f 1)"; }
 
 help() {
-    printf "Usage:	ffrec [option]
+    echo "Usage:	ffrec [option]
 
 Options:
--a|--audio   │ Record audio
--d|--display │ Record display
--w|--webcam  │ Record webcam
--D|--dmenu   │ Use Dmenu to choose what to record
--p|--pause   │ Pause the recording
--e|--end     │ End the recording
--h|--help    │ Print this help message and exit
-\n"
+-a|--audio    │ Record audio
+-d|--display  │ Record display
+-w|--webcam   │ Record webcam
+-D|--dmenu    │ Use Dmenu to choose what to record
+-m|--monitor  │ Choose the monitor to record
+-s|--size     │ Choose the size
+-l|--location │ Choose the directory to record to
+-t|--title    │ Choose the output file
+-p|--pause    │ Pause the recording
+-e|--end      │ End the recording
+-h|--help     │ Print this help message and exit"
 }
 
 parse_ffmpeg_opts() {
     while [ $# -gt 0 ]; do
-        key="$1"
-	case $key in
+	case "$1" in
 	-h|--help)
 	    help=1
 	    shift
+	    ;;
+	-l|--location)
+	    location=1
+	    shift
+	    location_argument=$1
+	    ;;
+	-t|--title)
+	    title=1
+	    shift
+	    title_argument="$1"
+	    ;;
+	-m|--monitor)
+	    monitor=1
+	    shift
+	    monitor_argument=$1
+	    ;;
+	-s|--size)
+	    size=1
+	    shift
+	    size_argument=$1
 	    ;;
 	-p|--pause)
 	    pause=1
