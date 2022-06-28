@@ -11,6 +11,8 @@ FFRec – FFmpeg Record
 -   [Uninstallation](#uninstallation)
     -   [Universal](#universal-1)
     -   [Gentoo](#gentoo-1)
+-   [Configuration](#configuration)
+-   [Credit](#credit)
 
 FFRec is a simple posix script to record audio and/or display easily
 using FFmpeg. It is a simple alternative to OBS. It supports Dmenu
@@ -70,3 +72,23 @@ For more details, run `` `#user` ffrec --help ``.
 `# root` eselect-repository remove -f amarlay
 `# root` emerge --sync
 ```
+
+## Configuration
+
+You can change the default values of FFRec options via the configuration
+file. The configuration file is located in the configuration directory,
+so usually `~/.config/ffrec/ffrec.conf`. Here is an example
+configuration:
+
+``` sh
+frame_rate=30
+preset="ultrafast"
+audio_encoder=mp3
+video_extension=mp4
+```
+
+## Credit
+
+Credit goes to
+[u/two-bit-hack](https://www.reddit.com/user/two-bit-hack/) on
+[Reddit](https://reddit.com) for helping me add options to this script.
