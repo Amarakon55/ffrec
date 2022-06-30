@@ -5,6 +5,11 @@
 
 [ -f "$config_file" ] && . "$config_file"
 
+cleanup() { rm -f $TMPFILE; }
+
+trap cleanup EXIT
+trap exit INT HUP TERM
+
 main() {
     parse_opts "$@"
 
@@ -46,12 +51,12 @@ main() {
     elif [ -n "$pause" ]; then
         [ "$ffmpegcheck" -ge 1 ] && ffmpegpause="$(grep State /proc/$ffmpegcheckid/status | cut -d '(' -f2 | cut -d ')' -f1)"
         if [ "$ffmpegpause" = "stopped" ]; then
-	   pkill -f -CONT ffmpeg
+	   pkill -CONT "^ffmpeg$"
         else
-	   pkill -f -STOP ffmpeg
+	   pkill -STOP "^ffmpeg$"
         fi
     elif [ -n "$end" ]; then
-        pkill -f ffmpeg & pkill -f ffrec
+        pkill "^ffmpeg$" & kill $$ & rm -f /tmp/ffmpeg-*
     elif [ -n "$dmenu" ]; then
 	dmenu="$(printf 'audio\ndisplay\nwebcam' | dmenu -i -p FFRec)"
 	if [ "$dmenu" = "audio" ]; then
@@ -82,14 +87,13 @@ main() {
 }
 
 record_base() {
-    rm -f /tmp/ffmpeg-*
-    TMPFILE=$(mktemp -t $title.XXXXXXX) || exit 1
+    TMPFILE=`mktemp -t $title.XXXXXXX`
 
     [ ! -d $dir/$1 ] && mkdir -p $dir/$1
     cmd -hide_banner -c:v $video_encoder -r $frame_rate -c:a $audio_encoder -preset $preset "$dir/$1/$title.$2" 2> $TMPFILE &\
-    while true; do
+    while [ -f $TMPFILE ]; do
 	printf "\r`cat -A $TMPFILE | tr ' ' '\n' | grep time= | tail -1 | awk -F time= {'print $2'} | cut -d '.' -f 1`"
-	sleep 0.001
+	sleep .001
     done
 }
 
@@ -150,98 +154,98 @@ Options:
 parse_opts() {
     while [ $# -gt 0 ]; do
 	case "$1" in
-	-h|--help)
-	    help=1
-	    shift
-	    ;;
-	-ae|--audio-encoder)
-	    audio_encoder_option=1
-	    shift
-	    audio_encoder_arguments="$@"
-	    ;;
-	-ve|--video-encoder)
-	    video_encoder_option=1
-	    shift
-	    video_encoder_arguments="$@"
-	    ;;
-	-ax|--audio-extension)
-	    audio_extension_option=1
-	    shift
-	    audio_extension_arguments="$@"
-	    ;;
-	-vx|--video-extension)
-	    video_extension_option=1
-	    shift
-	    video_extension_arguments="$@"
-	    ;;
-	-fps|--frame-rate)
-	    frame_rate_option=1
-	    shift
-	    frame_rate_arguments="$@"
-	    ;;
-	-ps|--preset)
-	    preset_option=1
-	    shift
-	    present_arguments="$@"
-	    ;;
-	-l|--location)
-	    location=1
-	    shift
-	    location_arguments="$@"
-	    ;;
-	-t|--title)
-	    title=1
-	    shift
-	    title_arguments="$@"
-	    ;;
-	-m|--monitor)
-	    monitor=1
-	    shift
-	    monitor_arguments="$@"
-	    ;;
-	-s|--size)
-	    size=1
-	    shift
-	    size_arguments="$@"
-	    ;;
-	-p|--pause)
-	    pause=1
-	    shift
-	    ;;
-	-e|--end)
-	    end=1
-	    shift
-	    ;;
-	-D|--dmenu)
-	    dmenu=1
-	    shift
-	    ;;
-        -a|--audio)
-            audio=1
-            shift
-            ;;
-        -d|--display)
-            display=1
-            shift
-            ;;
-	-ad|-da)
-	    audio=1
-	    display=1
-	    shift
-	    ;;
-	-w|--webcam)
-	    webcam=1
-	    shift
-	    ;;
-	-aw|-wa)
-	    audio=1
-	    webcam=1
-	    shift
-	    ;;
-        *)
-            shift
-            ;;
-        esac
+	    -h|--help)
+		help=1
+		shift
+		;;
+	    -ae|--audio-encoder)
+		audio_encoder_option=1
+		shift
+		audio_encoder_arguments="$@"
+		;;
+	    -ve|--video-encoder)
+		video_encoder_option=1
+		shift
+		video_encoder_arguments="$@"
+		;;
+	    -ax|--audio-extension)
+		audio_extension_option=1
+		shift
+		audio_extension_arguments="$@"
+		;;
+	    -vx|--video-extension)
+		video_extension_option=1
+		shift
+		video_extension_arguments="$@"
+		;;
+	    -fps|--frame-rate)
+		frame_rate_option=1
+		shift
+		frame_rate_arguments="$@"
+		;;
+	    -ps|--preset)
+		preset_option=1
+		shift
+		present_arguments="$@"
+		;;
+	    -l|--location)
+		location=1
+		shift
+		location_arguments="$@"
+		;;
+	    -t|--title)
+		title=1
+		shift
+		title_arguments="$@"
+		;;
+	    -m|--monitor)
+		monitor=1
+		shift
+		monitor_arguments="$@"
+		;;
+	    -s|--size)
+		size=1
+		shift
+		size_arguments="$@"
+		;;
+	    -p|--pause)
+		pause=1
+		shift
+		;;
+	    -e|--end)
+		end=1
+		shift
+		;;
+	    -D|--dmenu)
+		dmenu=1
+		shift
+		;;
+	    -a|--audio)
+		audio=1
+		shift
+		;;
+	    -d|--display)
+		display=1
+		shift
+		;;
+	    -ad|-da)
+		audio=1
+		display=1
+		shift
+		;;
+	    -w|--webcam)
+		webcam=1
+		shift
+		;;
+	    -aw|-wa)
+		audio=1
+		webcam=1
+		shift
+		;;
+	    *)
+		shift
+		;;
+	esac
     done
 }
 
