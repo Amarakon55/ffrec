@@ -51,7 +51,7 @@ main() {
 	   pkill -f -STOP ffmpeg
         fi
     elif [ -n "$end" ]; then
-        pkill -f ffmpeg
+        pkill -f ffmpeg & pkill -f ffrec
     elif [ -n "$dmenu" ]; then
 	dmenu="$(printf 'audio\ndisplay\nwebcam' | dmenu -i -p FFRec)"
 	if [ "$dmenu" = "audio" ]; then
@@ -121,26 +121,26 @@ record_audiocam(){
 randr() { printf ":0.0+$(xrandr | grep ' connected' | sed 's/ primary//g' | tail -$(expr $@ + 1) | head -1 | awk -F '+' '{print $2","$3}' | cut -d ' ' -f 1)"; }
 
 help() {
-    echo "Usage:	ffrec [option]
+    printf "Usage:	ffrec [option]
 
 Options:
   -d|--display         │ Record display
   -a|--audio           │ Record audio
   -w|--webcam          │ Record webcam
   -D|--dmenu           │ Use Dmenu to choose what to record
-
+                       │
   -m|--monitor         │ Choose the monitor to record
   -s|--size            │ Choose the size
   -l|--location        │ Choose the directory to record to
   -t|--title           │ Choose the output file
-
+                       │
 -fps|--frame-rate      │ Choose the frame rate (defaults to 60)
  -ps|--preset          │ Choose the encoder's preset (defaults to medium)
  -ae|--audio-encoder   │ Choose the audio encoder (defaults to flac)
  -ve|--video-encoder   │ Choose the video encoder (defaults to libx264)
  -ax|--audio-extension │ Choose the audio extension (defaults to audio encoder)
  -vx|--video-extension │ Choose the video extension (defaults to mkv)
-
+                       │
   -p|--pause           │ Pause the recording
   -e|--end             │ End the recording
   -h|--help            │ Print this help message and exit
