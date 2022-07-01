@@ -23,7 +23,7 @@ selection. And it is easier to use than plain FFmpeg.
 ``` sh
 `# user` ffrec --audio # record audio
 `# user` ffrec --display # record display
-`# user` ffrec --audio --display` # record audio and display
+`# user` ffrec --audio --display # record audio and display
 `# user` ffrec --webcam # record webcam
 # With Dmenu
 `# user` ffrec --dmenu # choose what to record in a Dmenu prompt
