@@ -1,10 +1,5 @@
 #!/bin/sh
 
-: "${config_dir:=${XDG_CONFIG_HOME:-$HOME/.config}/ffrec}"
-: "${config_file:=$config_dir/ffrec.conf}"
-
-[ -f "$config_file" ] && . "$config_file"
-
 cleanup() { rm -f $TMPFILE; }
 
 trap cleanup EXIT
@@ -12,6 +7,15 @@ trap exit INT HUP TERM
 
 main() {
     parse_opts "$@"
+
+    if [ -n "$help" ]; then
+	help ; exit 0
+    fi
+
+    : "${config_dir:=${XDG_CONFIG_HOME:-$HOME/.config}/ffrec}"
+    : "${config_file:=$config_dir/ffrec.conf}"
+
+    [ -f "$config_file" ] && . "$config_file"
 
     ffmpegcheck="$(pgrep -f ffmpeg | wc -l)"
     ffmpegcheckid="$(pgrep -f ffmpeg | tail -1)"
@@ -46,9 +50,7 @@ main() {
     { [ -n "$size" ] && size=$size_arguments ; } ||
     { size="$(xrandr | grep primary | cut -d ' ' -f 4 | cut -d + -f 1)"; }
 
-    if [ -n "$help" ]; then
-        help
-    elif [ -n "$pause" ]; then
+    if [ -n "$pause" ]; then
         [ "$ffmpegcheck" -ge 1 ] && ffmpegpause="$(grep State /proc/$ffmpegcheckid/status | cut -d '(' -f2 | cut -d ')' -f1)"
         if [ "$ffmpegpause" = "stopped" ]; then
 	   pkill -CONT "^ffmpeg$"
@@ -70,7 +72,6 @@ main() {
 	elif [ `printf "$dmenu" | grep -E "audio|webcam" | wc -l` -eq 2 ]; then
 	    record_audiocam
 	fi
-
     elif [ -n "$audio" -a -n "$display" ]; then
 	record_both
     elif [ -n "$audio" -a -n "$webcam" ]; then
