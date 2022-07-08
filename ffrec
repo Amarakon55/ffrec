@@ -5,6 +5,8 @@ cleanup() { rm -f $TMPFILE; }
 trap cleanup EXIT
 trap exit INT HUP TERM
 
+notrunning() { echo "`basename $0` is not running so it cannot be "$@"." ; exit 1; }
+
 main() {
     parse_opts "$@"
 
@@ -17,8 +19,8 @@ main() {
 
     [ -f "$config_file" ] && . "$config_file"
 
-    ffmpegcheck="$(pgrep -f ffmpeg | wc -l)"
-    ffmpegcheckid="$(pgrep -f ffmpeg | tail -1)"
+    ffmpegcheck="$(pgrep "^ffmpeg$" | wc -l)"
+    ffmpegcheckid="$(pgrep "^ffmpeg$" | tail -1)"
 
     [ -n "$audio_encoder_option" ] && audio_encoder="$audio_encoder_arguments"
     [ -z $audio_encoder ] && audio_encoder="flac"
@@ -32,8 +34,8 @@ main() {
     [ -n "$video_extension_option" ] && video_extension="$video_extension_arguments"
     [ -z $video_extension ] && video_extension="mkv"
 
-    [ -n "$frame_rate_option" ] && frame_rate=$frame_rate_arguments
-    [ -z $frame_rate ] && frame_rate=60
+    [ -n "$rate_option" ] && rate=$rate_arguments
+    [ -z $rate ] && rate=60
 
     [ -n "$preset_option" ] && preset="$preset_arguments"
     [ -z $preset ] && preset="medium"
@@ -51,14 +53,22 @@ main() {
     { size="$(xrandr | grep primary | cut -d ' ' -f 4 | cut -d + -f 1)"; }
 
     if [ -n "$pause" ]; then
-        [ "$ffmpegcheck" -ge 1 ] && ffmpegpause="$(grep State /proc/$ffmpegcheckid/status | cut -d '(' -f2 | cut -d ')' -f1)"
+        if [ "$ffmpegcheck" -ge 1 ]; then
+	    ffmpegpause="$(grep State /proc/$ffmpegcheckid/status | cut -d '(' -f2 | cut -d ')' -f1)"
+	else
+	    notrunning "paused"
+	fi
         if [ "$ffmpegpause" = "stopped" ]; then
 	   pkill -CONT "^ffmpeg$"
         else
 	   pkill -STOP "^ffmpeg$"
         fi
     elif [ -n "$end" ]; then
-        pkill "^ffmpeg$" & kill $$ & rm -f /tmp/ffmpeg-*
+        if [ "$ffmpegcheck" -ge 1 ]; then
+	    pkill "^ffmpeg$" & kill $$ & rm -f /tmp/ffmpeg-*
+	else
+	    notrunning "ended"
+	fi
     elif [ -n "$dmenu" ]; then
 	dmenu="$(printf 'audio\ndisplay\nwebcam' | dmenu -i -p FFRec)"
 	if [ "$dmenu" = "audio" ]; then
@@ -91,7 +101,7 @@ record_base() {
     TMPFILE=`mktemp -t $title.XXXXXXX`
 
     [ ! -d $dir/$1 ] && mkdir -p $dir/$1
-    cmd -hide_banner -c:v $video_encoder -r $frame_rate -c:a $audio_encoder -preset $preset "$dir/$1/$title.$2" 2> $TMPFILE &\
+    cmd -hide_banner -c:v $video_encoder -r $rate -c:a $audio_encoder -preset $preset "$dir/$1/$title.$2" 2> $TMPFILE &\
     while [ -f $TMPFILE ]; do
 	printf "\r`cat -A $TMPFILE | tr ' ' '\n' | grep time= | tail -1 | awk -F time= {'print $2'} | cut -d '.' -f 1`"
 	sleep .001
@@ -126,128 +136,67 @@ record_audiocam(){
 randr() { printf ":0.0+$(xrandr | grep ' connected' | sed 's/ primary//g' | tail -$(expr $@ + 1) | head -1 | awk -F '+' '{print $2","$3}' | cut -d ' ' -f 1)"; }
 
 help() {
-    printf "Usage:	ffrec [option]
+    printf "Usage:	ffrec [options]
 
 Options:
-  -d|--display         │ Record display
-  -a|--audio           │ Record audio
-  -w|--webcam          │ Record webcam
-  -D|--dmenu           │ Use Dmenu to choose what to record
-                       │
-  -m|--monitor         │ Choose the monitor to record
-  -s|--size            │ Choose the size
-  -l|--location        │ Choose the directory to record to
-  -t|--title           │ Choose the output file
-                       │
--fps|--frame-rate      │ Choose the frame rate (defaults to 60)
- -ps|--preset          │ Choose the encoder's preset (defaults to medium)
- -ae|--audio-encoder   │ Choose the audio encoder (defaults to flac)
- -ve|--video-encoder   │ Choose the video encoder (defaults to libx264)
- -ax|--audio-extension │ Choose the audio extension (defaults to audio encoder)
- -vx|--video-extension │ Choose the video extension (defaults to mkv)
-                       │
-  -p|--pause           │ Pause the recording
-  -e|--end             │ End the recording
-  -h|--help            │ Print this help message and exit
+-d|--display         │ Record display
+-a|--audio           │ Record audio
+-w|--webcam          │ Record webcam
+-D|--dmenu           │ Use Dmenu to choose what to record
+                     │
+-m|--monitor         │ Choose the monitor to record
+-s|--size            │ Choose the size
+-l|--location        │ Choose the directory to record to
+-t|--title           │ Choose the output file
+                     │
+-r|--rate            │ Choose the frame rate (defaults to 60)
+-p|--preset          │ Choose the encoder's preset (defaults to medium)
+   --audio-encoder   │ Choose the audio encoder (defaults to flac)
+   --video-encoder   │ Choose the video encoder (defaults to libx264)
+   --audio-extension │ Choose the audio extension (defaults to audio encoder)
+   --video-extension │ Choose the video extension (defaults to mkv)
+                     │
+-P|--pause           │ Pause the recording
+-e|--end             │ End the recording
+                     │
+-h|--help            │ Print this help message and exit
 "
 }
 
 parse_opts() {
-    while [ $# -gt 0 ]; do
-	case "$1" in
-	    -h|--help)
-		help=1
-		shift
-		;;
-	    -ae|--audio-encoder)
-		audio_encoder_option=1
-		shift
-		audio_encoder_arguments="$@"
-		;;
-	    -ve|--video-encoder)
-		video_encoder_option=1
-		shift
-		video_encoder_arguments="$@"
-		;;
-	    -ax|--audio-extension)
-		audio_extension_option=1
-		shift
-		audio_extension_arguments="$@"
-		;;
-	    -vx|--video-extension)
-		video_extension_option=1
-		shift
-		video_extension_arguments="$@"
-		;;
-	    -fps|--frame-rate)
-		frame_rate_option=1
-		shift
-		frame_rate_arguments="$@"
-		;;
-	    -ps|--preset)
-		preset_option=1
-		shift
-		present_arguments="$@"
-		;;
-	    -l|--location)
-		location=1
-		shift
-		location_arguments="$@"
-		;;
-	    -t|--title)
-		title=1
-		shift
-		title_arguments="$@"
-		;;
-	    -m|--monitor)
-		monitor=1
-		shift
-		monitor_arguments="$@"
-		;;
-	    -s|--size)
-		size=1
-		shift
-		size_arguments="$@"
-		;;
-	    -p|--pause)
-		pause=1
-		shift
-		;;
-	    -e|--end)
-		end=1
-		shift
-		;;
-	    -D|--dmenu)
-		dmenu=1
-		shift
-		;;
-	    -a|--audio)
-		audio=1
-		shift
-		;;
-	    -d|--display)
-		display=1
-		shift
-		;;
-	    -ad|-da)
-		audio=1
-		display=1
-		shift
-		;;
-	    -w|--webcam)
-		webcam=1
-		shift
-		;;
-	    -aw|-wa)
-		audio=1
-		webcam=1
-		shift
-		;;
-	    *)
-		shift
-		;;
+    die() { echo "$*" >&2; exit 2; }  # complain to STDERR and exit with error
+    needs_arg() { [ -z "$OPTARG" ] && die "No arg for --$OPT option"; }
+
+    while getopts hr:p:l:t:m:s:PeDadw-: OPT; do
+	# support long options: https://stackoverflow.com/a/28466267/519360
+	if [ "$OPT" = "-" ]; then   # long option: reformulate OPT and OPTARG
+	    OPT="${OPTARG%%=*}"       # extract long option name2022
+	    OPTARG="${OPTARG#$OPT}"   # extract long option argument (may be empty)
+	    OPTARG="${OPTARG#=}"      # if long option argument, remove assigning `=`
+	fi
+	case "$OPT" in
+	    h | help)     	help=1 ;;
+	    audio-encoder)	needs_arg ; audio_encoder_option=1 audio_encoder_arguments="$OPTARG" ;;
+	    video-encoder)	needs_arg ; video=1 video_encoder_arguments="$OPTARG" ;;
+	    audio-extension)	needs_arg ; audio_extension_option=1 audio_extension_arguments="$OPTARG" ;;
+	    video-extension)	needs_arg ; video_extension_option=1 video_extension_arguments="$OPTARG" ;;
+	    r | rate)		needs_arg ; rate_option=1 rate_arguments="$OPTARG" ;;
+	    p | preset)		needs_arg ; preset_option=1 present_arguments="$OPTARG" ;;
+	    l | location)	needs_arg ; location=1 location_arguments="$OPTARG" ;;
+	    t | title)		needs_arg ; title=1 title_arguments="$OPTARG" ;;
+	    m | monitor)	needs_arg ; monitor=1 monitor_arguments="$OPTARG" ;;
+	    s | size)		needs_arg ; size=1 size_arguments="$OPTARG" ;;
+	    P | pause)		pause=1 ;;
+	    e | end)		end=1 ;;
+	    D | dmenu)		dmenu=1 ;;
+	    a | audio)		audio=1 ;;
+	    d | display)	display=1 ;;
+	    w | webcam)		webcam=1 ;;
+	    ??*)          	die "Illegal option --$OPT" ;;  # bad long option
+	    ?)            	exit 2 ;;  # bad short option (error reported via getopts)
 	esac
     done
+    shift $((OPTIND-1)) # remove parsed options and args from $@ list
 }
 
 main "$@"
