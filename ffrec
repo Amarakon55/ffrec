@@ -1,7 +1,6 @@
 #!/bin/sh
 
-cleanup() { rm -f $TMPFILE; }
-
+cleanup() { rm -f "$TMPFILE"; }
 trap cleanup EXIT
 trap exit INT HUP TERM
 
@@ -10,13 +9,8 @@ notrunning() { echo "`basename $0` is not running so it cannot be "$@"." ; exit 
 main() {
     parse_opts "$@"
 
-    if [ -n "$help" ]; then
-	help ; exit 0
-    fi
-
     : "${config_dir:=${XDG_CONFIG_HOME:-$HOME/.config}/ffrec}"
     : "${config_file:=$config_dir/ffrec.conf}"
-
     [ -f "$config_file" ] && . "$config_file"
 
     ffmpegcheck="$(pgrep "^ffmpeg$" | wc -l)"
@@ -53,35 +47,21 @@ main() {
     { size="$(xrandr | grep primary | cut -d ' ' -f 4 | cut -d + -f 1)"; }
 
     if [ -n "$pause" ]; then
-        if [ "$ffmpegcheck" -ge 1 ]; then
-	    ffmpegpause="$(grep State /proc/$ffmpegcheckid/status | cut -d '(' -f2 | cut -d ')' -f1)"
-	else
-	    notrunning "paused"
-	fi
-        if [ "$ffmpegpause" = "stopped" ]; then
-	   pkill -CONT "^ffmpeg$"
-        else
-	   pkill -STOP "^ffmpeg$"
-        fi
+	{ [ "$ffmpegcheck" -ge 1 ] && ffmpegpause="$(grep State /proc/$ffmpegcheckid/status | cut -d '(' -f2 | cut -d ')' -f1)"; } ||
+	{ notrunning "paused"; }
+
+	{ [ "$ffmpegpause" = "stopped" ] && pkill -CONT "^ffmpeg$"; } ||
+	{ pkill -STOP "^ffmpeg$"; }
     elif [ -n "$end" ]; then
-        if [ "$ffmpegcheck" -ge 1 ]; then
-	    pkill "^ffmpeg$" & kill $$ & rm -f /tmp/ffmpeg-*
-	else
-	    notrunning "ended"
-	fi
+	{ [ "$ffmpegcheck" -ge 1 ] && pkill "^ffmpeg$" & kill $$ & rm -f /tmp/ffmpeg-*; } ||
+	{ notrunning "ended"; }
     elif [ -n "$dmenu" ]; then
-	dmenu="$(printf 'audio\ndisplay\nwebcam' | dmenu -i -p FFRec)"
-	if [ "$dmenu" = "audio" ]; then
-	    record_audio
-	elif [ "$dmenu" = "display" ]; then
-	    record_display
-	elif [ `printf "$dmenu" | grep -E "audio|display" | wc -l` -eq 2 ]; then
-	    record_both
-	elif [ "$dmenu" = "webcam" ]; then
-	    record_webcam
-	elif [ `printf "$dmenu" | grep -E "audio|webcam" | wc -l` -eq 2 ]; then
-	    record_audiocam
-	fi
+	dmenu="$(printf "audio\ndisplay\nwebcam" | dmenu -i -p FFRec)"
+	{ [ "$dmenu" = "audio" ] && record_audio; } ||
+	{ [ "$dmenu" = "display" ] && record_display; } ||
+	{ [ `printf "$dmenu" | grep -E "audio|display" | wc -l` -eq 2 ] && record_both; } ||
+	{ [ "$dmenu" = "webcam" ] && record_webcam; } ||
+	{ [ `printf "$dmenu" | grep -E "audio|webcam" | wc -l` -eq 2 ] && record_audiocam; }
     elif [ -n "$audio" -a -n "$display" ]; then
 	record_both
     elif [ -n "$audio" -a -n "$webcam" ]; then
@@ -175,7 +155,7 @@ parse_opts() {
 	    OPTARG="${OPTARG#=}"      # if long option argument, remove assigning `=`
 	fi
 	case "$OPT" in
-	    h | help)     	help=1 ;;
+	    h | help)     	help ; exit 0 ;;
 	    audio-encoder)	needs_arg ; audio_encoder_option=1 audio_encoder_arguments="$OPTARG" ;;
 	    video-encoder)	needs_arg ; video=1 video_encoder_arguments="$OPTARG" ;;
 	    audio-extension)	needs_arg ; audio_extension_option=1 audio_extension_arguments="$OPTARG" ;;
