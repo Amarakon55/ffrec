@@ -122,7 +122,7 @@ Options:
 -d|--display         │ Record display
 -a|--audio           │ Record audio
 -w|--webcam          │ Record webcam
--D|--dmenu           │ Use Dmenu to choose what to record
+-D|--dmenu           │ Use dmenu to choose what to record
                      │
 -m|--monitor         │ Choose the monitor to record
 -s|--size            │ Choose the size

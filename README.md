@@ -15,7 +15,7 @@ FFRec – FFmpeg Record
 -   [Credit](#credit)
 
 FFRec is a simple POSIX script to record audio and/or display easily
-using FFmpeg. It is a simple alternative to OBS. It supports Dmenu
+using FFmpeg. It is a simple alternative to OBS. It supports dmenu
 selection. And it is easier to use than plain FFmpeg.
 
 ## Usage
@@ -25,8 +25,8 @@ selection. And it is easier to use than plain FFmpeg.
 `# user` ffrec --display # record display
 `# user` ffrec --audio --display # record audio and display
 `# user` ffrec --webcam # record webcam
-# With Dmenu
-`# user` ffrec --dmenu # choose what to record in a Dmenu prompt
+# With dmenu
+`# user` ffrec --dmenu # choose what to record in a dmenu prompt
 ```
 
 For more details, run `` `# user` ffrec --help ``.
@@ -35,7 +35,7 @@ For more details, run `` `# user` ffrec --help ``.
 
 1.  FFmpeg
 2.  Xrandr
-3.  Dmenu (menu selection)
+3.  dmenu (menu selection)
 
 ## Installation
 
