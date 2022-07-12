@@ -14,7 +14,7 @@ FFRec – FFmpeg Record
 -   [Configuration](#configuration)
 -   [Credit](#credit)
 
-FFRec is a simple posix script to record audio and/or display easily
+FFRec is a simple POSIX script to record audio and/or display easily
 using FFmpeg. It is a simple alternative to OBS. It supports Dmenu
 selection. And it is easier to use than plain FFmpeg.
 
