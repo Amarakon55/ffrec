@@ -4,7 +4,7 @@ cleanup() { rm -f "$TMPFILE"; }
 trap cleanup EXIT
 trap exit INT HUP TERM
 
-notrunning() { echo "`basename $0` is not running so it cannot be "$@"." ; exit 1; }
+notrunning() { echo "$(basename $0) is not running so it cannot be "$@"." ; exit 1; }
 
 main() {
     parse_opts "$@"
@@ -40,7 +40,7 @@ main() {
     { [ -n "$title" ] && title="$title_arguments"; } ||
     { title="ffmpeg-$(date +'%Y-%m-%d_%R:%S')"; }
 
-    { [ -n "$monitor" ] && mon=`randr $monitor_arguments`; } ||
+    { [ -n "$monitor" ] && mon=$(randr $monitor_arguments); } ||
     { mon=$(randr $(printmon)); }
 
     { [ -n "$size" ] && size=$size_arguments ; } ||
@@ -59,9 +59,9 @@ main() {
 	dmenu="$(printf "audio\ndisplay\nwebcam" | dmenu -i -p FFRec)"
 	{ [ "$dmenu" = "audio" ] && record_audio; } ||
 	{ [ "$dmenu" = "display" ] && record_display; } ||
-	{ [ `printf "$dmenu" | grep -E "audio|display" | wc -l` -eq 2 ] && record_both; } ||
+	{ [ $(printf "$dmenu" | grep -E "audio|display" | wc -l) -eq 2 ] && record_both; } ||
 	{ [ "$dmenu" = "webcam" ] && record_webcam; } ||
-	{ [ `printf "$dmenu" | grep -E "audio|webcam" | wc -l` -eq 2 ] && record_audiocam; }
+	{ [ $(printf "$dmenu" | grep -E "audio|webcam" | wc -l) -eq 2 ] && record_audiocam; }
     elif [ -n "$audio" -a -n "$display" ]; then
 	record_both
     elif [ -n "$audio" -a -n "$webcam" ]; then
@@ -78,12 +78,12 @@ main() {
 }
 
 record_base() {
-    TMPFILE=`mktemp -t $title.XXXXXXX`
+    TMPFILE=$(mktemp -t $title.XXXXXXX)
 
     [ ! -d $dir/$1 ] && mkdir -p $dir/$1
     cmd -hide_banner -c:v $video_encoder -r $rate -c:a $audio_encoder -preset $preset "$dir/$1/$title.$2" 2> $TMPFILE &\
     while [ -f $TMPFILE ]; do
-	printf "\r`cat -A $TMPFILE | tr ' ' '\n' | grep time= | tail -1 | awk -F time= {'print $2'} | cut -d '.' -f 1`"
+	printf "\r$(cat -A $TMPFILE | tr ' ' '\n' | grep time= | tail -1 | awk -F time= {'print $2'} | cut -d '.' -f 1)"
 	sleep .001
     done
 }
