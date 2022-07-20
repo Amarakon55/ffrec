@@ -34,34 +34,35 @@ main() {
     [ -n "$preset_option" ] && preset="$preset_arguments"
     [ -z $preset ] && preset="medium"
 
-    { [ -n "$location" ] && dir=$location_arguments; } ||
-    { dir=~/.local/share/ffrec; }
+    if [ -n "$location" ]; then dir=$location_arguments
+    else dir=~/.local/share/ffrec; fi
 
-    { [ -n "$title" ] && title="$title_arguments"; } ||
-    { title="ffmpeg-$(date +'%Y-%m-%d_%R:%S')"; }
+    if [ -n "$title" ]; then title="$title_arguments"
+    else title="ffmpeg-$(date +'%Y-%m-%d_%R:%S')"; fi
 
-    { [ -n "$monitor" ] && mon=$(randr $monitor_arguments); } ||
-    { mon=$(randr $(printmon)); }
+    if [ -n "$monitor" ]; then mon=$(randr $monitor_arguments)
+    else mon=$(randr $(printmon)); fi
 
-    { [ -n "$size" ] && size=$size_arguments ; } ||
-    { size="$(xrandr | grep primary | cut -d ' ' -f 4 | cut -d + -f 1)"; }
+    if [ -n "$size" ]; then size=$size_arguments
+    else size="$(xrandr | grep primary | cut -d ' ' -f 4 | cut -d + -f 1)"; fi
 
     if [ -n "$pause" ]; then
-	{ [ "$ffmpegcheck" -ge 1 ] && ffmpegpause="$(grep State /proc/$ffmpegcheckid/status | cut -d '(' -f2 | cut -d ')' -f1)"; } ||
-	{ notrunning "paused"; }
+	if [ "$ffmpegcheck" -ge 1 ]; then ffmpegpause="$(grep State /proc/$ffmpegcheckid/status | cut -d '(' -f2 | cut -d ')' -f1)"
+	else notrunning "paused"; fi
 
-	{ [ "$ffmpegpause" = "stopped" ] && pkill -CONT "^ffmpeg$"; } ||
-	{ pkill -STOP "^ffmpeg$"; }
+	if [ "$ffmpegpause" = "stopped" ]; then pkill -CONT "^ffmpeg$"
+	else pkill -STOP "^ffmpeg$"; fi
     elif [ -n "$end" ]; then
-	{ [ "$ffmpegcheck" -ge 1 ] && pkill "^ffmpeg$" & kill $$ & rm -f /tmp/ffmpeg-*; } ||
-	{ notrunning "ended"; }
+	if [ "$ffmpegcheck" -ge 1 ]; then pkill "^ffmpeg$" & kill $$ & rm -f /tmp/ffmpeg-*
+	else notrunning "ended"; fi
     elif [ -n "$dmenu" ]; then
 	dmenu="$(printf "audio\ndisplay\nwebcam" | dmenu -i -p FFRec)"
-	{ [ "$dmenu" = "audio" ] && record_audio; } ||
-	{ [ "$dmenu" = "display" ] && record_display; } ||
-	{ [ $(printf "$dmenu" | grep -E "audio|display" | wc -l) -eq 2 ] && record_both; } ||
-	{ [ "$dmenu" = "webcam" ] && record_webcam; } ||
-	{ [ $(printf "$dmenu" | grep -E "audio|webcam" | wc -l) -eq 2 ] && record_audiocam; }
+	if [ "$dmenu" = "audio" ]; then record_audio
+	elif [ "$dmenu" = "display" ]; then record_display
+	elif [ $(printf "$dmenu" | grep -E "audio|display" | wc -l) -eq 2 ]; then record_both
+	elif [ "$dmenu" = "webcam" ];then record_webcam
+	elif [ $(printf "$dmenu" | grep -E "audio|webcam" | wc -l) -eq 2 ]; then record_audiocam
+	fi
     elif [ -n "$audio" -a -n "$display" ]; then
 	record_both
     elif [ -n "$audio" -a -n "$webcam" ]; then
