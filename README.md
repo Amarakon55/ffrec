@@ -1,4 +1,4 @@
-FFRec – FFmpeg Record
+FFrec – FFmpeg Record
 ================
 
 ## Contents
@@ -14,7 +14,7 @@ FFRec – FFmpeg Record
 -   [Configuration](#configuration)
 -   [Credit](#credit)
 
-FFRec is a simple POSIX script to record audio and/or display easily
+FFrec is a simple POSIX script to record audio and/or display easily
 using FFmpeg. It is a simple alternative to OBS. It supports dmenu
 selection. And it is easier to use than plain FFmpeg.
 
@@ -75,7 +75,7 @@ For more details, run `` `# user` ffrec --help ``.
 
 ## Configuration
 
-You can change the default values of FFRec options via the configuration
+You can change the default values of FFrec options via the configuration
 file. The configuration file is located in the configuration directory,
 so usually `~/.config/ffrec/ffrec.conf`. Here is an example
 configuration:
