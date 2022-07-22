@@ -33,8 +33,8 @@ For more details, run `` `# user` ffrec --help ``.
 
 ## Dependencies
 
-1.  FFmpeg
-2.  Xrandr
+1.  ffmpeg
+2.  xrandr
 3.  dmenu (menu selection)
 
 ## Installation
@@ -81,7 +81,7 @@ so usually `~/.config/ffrec/ffrec.conf`. Here is an example
 configuration:
 
 ``` sh
-frame_rate=30
+rate=30
 preset="ultrafast"
 audio_encoder=mp3
 video_extension=mp4
