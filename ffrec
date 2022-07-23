@@ -30,7 +30,7 @@ main() { parse_opts "$@"
 
     [ ! -n "$output_directory" ] && output_directory=~/.local/share/$(basename $0)
 
-    [ -z "$title" ] && title="%Y-%m-%d_%R:%S"
+    [ -z "$title" ] && title="%F_%R:%S"
     title="$(date +$title)"
     newt="ffmpeg-$title"
 
@@ -124,7 +124,7 @@ Options:
                      │
 -m|--monitor         │ Choose the monitor to record
 -s|--size            │ Choose the size
--t|--title           │ Specify the title format (default is %Y-%m-%d_%R:%S)
+-t|--title           │ Specify the title format (default is %F_%R:%S)
                      │
 -r|--rate            │ Choose the frame rate (defaults to 60)
 -p|--preset          │ Choose the encoder's preset (defaults to medium)
