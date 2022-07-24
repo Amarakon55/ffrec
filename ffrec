@@ -114,7 +114,7 @@ record_audiocam(){
 randr() { printf ":0.0+$(xrandr | grep ' connected' | sed 's/ primary//g' | tail -$(expr $@ + 1) | head -1 | awk -F '+' '{print $2","$3}' | cut -d ' ' -f 1)"; }
 
 help() {
-    printf "Usage:	$(basename $0) [options]
+    echo -n "Usage:	$(basename $0) [options]
 
 Options:
 -d|--display         │ Record display
@@ -137,8 +137,7 @@ Options:
 -e|--end             │ End the recording
                      │
 -h|--help            │ Print this help message and exit
-"
-}
+"; }
 
 parse_opts() {
     : "${config_dir:=${XDG_CONFIG_HOME:-$HOME/.config}/$(basename $0)}"
