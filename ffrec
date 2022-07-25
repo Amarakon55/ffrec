@@ -68,7 +68,7 @@ main() { parse_opts "$@"
     elif [ -n "$webcam" ]; then
         record_webcam
     else
-        help
+        help ; exit 1
     fi
 }
 
