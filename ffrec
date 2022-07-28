@@ -4,7 +4,11 @@ cleanup() { rm -f "$TMPFILE"; }
 trap cleanup EXIT
 trap exit INT HUP TERM
 
-notrunning() { echo "$(basename $0) is not running so it cannot be "$@"." ; exit 1; }
+check() {
+    one="$1" two="$2"
+    test -z "$one" && $one="$two"
+}
+notrunning() { printf "$(basename $0) is not running so it cannot be "$@".\n" ; exit 1; }
 
 main() { parse_opts "$@"
     [ -z $audio_encoder ] && audio_encoder="flac"
@@ -90,8 +94,7 @@ record_audiocam(){
 
 randr() { printf ":0.0+$(xrandr | grep ' connected' | sed 's/ primary//g' | tail -$(expr $@ + 1) | head -1 | awk -F '+' '{print $2","$3}' | cut -d ' ' -f 1)"; }
 
-help() {
-    echo -n "Usage:	$(basename $0) [options]
+help() { printf "Usage:	$(basename $0) [options]
 
 Options:
 -d|--display         │ Record display
@@ -101,7 +104,7 @@ Options:
                      │
 -m|--monitor         │ Choose the monitor to record
 -s|--size            │ Choose the size
--t|--title           │ Specify the title format (default is %F_%R:%S)
+-t|--title           │ Specify the title format (default is %%F_%%R:%%S)
                      │
 -r|--rate            │ Choose the frame rate (defaults to 60)
 -p|--preset          │ Choose the encoder's preset (defaults to medium)
@@ -121,7 +124,7 @@ parse_opts() {
     : "${config_file:=$config_dir/$(basename $0).conf}"
     [ -f "$config_file" ] && . "$config_file"
 
-    die() { echo "$*" >&2; exit 2; }  # complain to STDERR and exit with error
+    die() { printf "$*\n" >&2; exit 2; }  # complain to STDERR and exit with error
     needs_arg() { [ -z "$OPTARG" ] && die "No arg for --$OPT option"; }
 
     while getopts hr:p:l:t:m:s:PeDadw-: OPT; do
