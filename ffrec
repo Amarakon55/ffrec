@@ -8,7 +8,7 @@ check() {
     one="$1" two="$2"
     test -z "$one" && $one="$two"
 }
-notrunning() { printf "$(basename $0) is not running so it cannot be "$@".\n" ; exit 1; }
+notrunning() { printf "$(basename $0) is not running so it cannot be "$@".\n" >&2 ; exit 1; }
 
 main() { parse_opts "$@"
     [ -z $audio_encoder ] && audio_encoder="flac"
