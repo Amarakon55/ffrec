@@ -6,7 +6,7 @@ trap exit INT HUP TERM
 
 check() {
     one="$1" two="$2"
-    test -z "$one" && $one="$two"
+    [ -z "$one" ] && $one="$two"
 }
 notrunning() { printf "$(basename $0) is not running so it cannot be "$@".\n" >&2 ; exit 1; }
 
