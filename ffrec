@@ -8,7 +8,11 @@ check() {
     one="$1" two="$2"
     [ -z "$one" ] && $one="$two"
 }
-notrunning() { printf "$(basename $0) is not running so it cannot be "$@".\n" >&2 ; exit 1; }
+
+not_running() {
+    printf "$(basename $0) is not running so it cannot be "$@".\n" >&2
+    exit 1
+}
 
 main() { parse_opts "$@"
     [ -z $audio_encoder ] && audio_encoder="flac"
@@ -23,27 +27,33 @@ main() { parse_opts "$@"
     newt="ffmpeg-$title"
     [ -z $monitor ] && monitor=$(printmon)
     mon=$(randr $monitor)
-    [ -z $size ] && size="$(xrandr | grep primary | cut -d ' ' -f 4 | cut -d + -f 1)"
+    [ -z $size ] && size="$(xrandr | grep primary |
+	cut -d " " -f 4 | cut -d + -f 1)"
 
     ffmpegcheck="$(pgrep --exact ffmpeg | wc -l)"
     ffmpegcheckid="$(pgrep --exact ffmpeg | tail -1)"
 
     if [ "$pause" = true ]; then
-	if [ "$ffmpegcheck" -ge 1 ]; then ffmpegpause="$(grep State /proc/$ffmpegcheckid/status | cut -d '(' -f2 | cut -d ')' -f1)"
-	else notrunning "paused"; fi
+	if [ "$ffmpegcheck" -ge 1 ]; then
+	    ffmpegpause="$(grep State /proc/$ffmpegcheckid/status |
+		cut -d '(' -f2 | cut -d ')' -f1)"
+	else not_running "paused"; fi
 
 	if [ "$ffmpegpause" = "stopped" ]; then pkill -CONT --exact ffmpeg
 	else pkill -STOP --exact ffmpeg; fi
     elif [ "$end" = true ]; then
-	if [ "$ffmpegcheck" -ge 1 ]; then pkill --exact ffmpeg & kill $$ & rm -f /tmp/ffmpeg-*
-	else notrunning "ended"; fi
+	if [ "$ffmpegcheck" -ge 1 ]; then
+	    pkill --exact ffmpeg & kill $$ & rm -f /tmp/ffmpeg-*
+	else not_running "ended"; fi
     elif [ "$dmenu" = true ]; then
 	dmenu="$(printf "audio\ndisplay\nwebcam" | dmenu -i -p FFrec)"
 	if [ "$dmenu" = "audio" ]; then record_audio
 	elif [ "$dmenu" = "display" ]; then record_display
-	elif [ $(printf "$dmenu" | grep -E "audio|display" | wc -l) -eq 2 ]; then record_both
-	elif [ "$dmenu" = "webcam" ];then record_webcam
-	elif [ $(printf "$dmenu" | grep -E "audio|webcam" | wc -l) -eq 2 ]; then record_audiocam
+	elif [ $(printf "$dmenu" | grep -E "audio|display" | wc -l) -eq 2 ]; then
+	    record_both
+	elif [ "$dmenu" = "webcam" ]; then record_webcam
+	elif [ $(printf "$dmenu" | grep -E "audio|webcam" | wc -l) -eq 2 ]; then
+	    record_audiocam
 	fi
     elif [ "$audio" = true -a "$display" = true ]; then record_both
     elif [ "$audio" = true -a "$webcam" = true ]; then record_audiocam
@@ -62,7 +72,8 @@ record_base() {
 
     cmd -hide_banner -c:v $video_encoder -r $rate -c:a $audio_encoder -preset $preset "$output_file" 2> $TMPFILE &\
     while [ -f $TMPFILE ]; do
-	printf "\r$(cat -A $TMPFILE | tr ' ' '\n' | grep time= | tail -1 | awk -F time= {'print $2'} | cut -d '.' -f 1)"
+	printf "\r$(cat -A $TMPFILE | tr " " "\n" | grep time= | tail -1 |
+	    awk -F time= {'print $2'} | cut -d '.' -f 1)"
 	sleep .001
     done
 }
@@ -92,31 +103,35 @@ record_audiocam(){
     record_base Webcam $video_extension
 }
 
-randr() { printf ":0.0+$(xrandr | grep ' connected' | sed 's/ primary//g' | tail -$(expr $@ + 1) | head -1 | awk -F '+' '{print $2","$3}' | cut -d ' ' -f 1)"; }
+randr() {
+    printf ":0.0+$(xrandr | grep ' connected' | sed 's/ primary//g' |
+	tail -$(expr $@ + 1) | head -1 |
+	awk -F '+' '{print $2","$3}' | cut -d ' ' -f 1)"
+}
 
-help() { printf "Usage:	$(basename $0) [options]
+help() { printf 'Usage:\t%s' "$(basename $0) [options] [arguments]
 
 Options:
--d|--display         │ Record display
--a|--audio           │ Record audio
--w|--webcam          │ Record webcam
--D|--dmenu           │ Use dmenu to choose what to record
-                     │
--m|--monitor         │ Choose the monitor to record
--s|--size            │ Choose the size
--t|--title           │ Specify the title format (default is %%F_%%R:%%S)
-                     │
--r|--rate            │ Choose the frame rate (defaults to 60)
--p|--preset          │ Choose the encoder's preset (defaults to medium)
-   --audio-encoder   │ Choose the audio encoder (defaults to flac)
-   --video-encoder   │ Choose the video encoder (defaults to libx264)
-   --audio-extension │ Choose the audio extension (defaults to audio encoder)
-   --video-extension │ Choose the video extension (defaults to mkv)
-                     │
--P|--pause           │ Pause the recording
--e|--end             │ End the recording
-                     │
--h|--help            │ Print this help message and exit
+-d|--display                         │ Record display
+-a|--audio                           │ Record audio
+-w|--webcam                          │ Record webcam
+-D|--dmenu                           │ Use dmenu to choose what to record
+                                     │
+-m|--monitor=MONITOR                 │ Choose the monitor to record (default: focused)
+-s|--size=SIZE                       │ Choose the size (default: resolution)
+-t|--title=TITLE                     │ Specify the title format (default: %F_%R:%S)
+                                     │
+-r|--rate=RATE                       │ Choose the frame rate (default: 60)
+-p|--preset=PRESET                   │ Choose the encoder's preset (default: medium)
+   --audio-encoder=AUDIO_ENCODER     │ Choose the audio encoder (default: flac)
+   --video-encoder=VIDEO_ENCODER     │ Choose the video encoder (default: libx264)
+   --audio-extension=AUDIO_EXTENSION │ Choose the audio extension (default: audio encoder)
+   --video-extension=VIDEO_EXTENSION │ Choose the video extension (default: mkv)
+                                     │
+-P|--pause                           │ Pause the recording
+-e|--end                             │ End the recording
+                                     │
+-h|--help                            │ Print this help message and exit
 "; }
 
 parse_opts() {
@@ -124,15 +139,15 @@ parse_opts() {
     : "${config_file:=$config_dir/$(basename $0).conf}"
     [ -f "$config_file" ] && . "$config_file"
 
-    die() { printf "$*\n" >&2; exit 2; }  # complain to STDERR and exit with error
+    die() { printf "$*\n" >&2; exit 2; }
     needs_arg() { [ -z "$OPTARG" ] && die "No arg for --$OPT option"; }
 
     while getopts hr:p:l:t:m:s:PeDadw-: OPT; do
-	# support long options: https://stackoverflow.com/a/28466267/519360
-	if [ "$OPT" = "-" ]; then   # long option: reformulate OPT and OPTARG
-	    OPT="${OPTARG%%=*}"       # extract long option name2022
-	    OPTARG="${OPTARG#$OPT}"   # extract long option argument (may be empty)
-	    OPTARG="${OPTARG#=}"      # if long option argument, remove assigning `=`
+	# Support long options: https://stackoverflow.com/a/28466267/519360
+	if [ "$OPT" = "-" ]; then
+	    OPT="${OPTARG%%=*}"
+	    OPTARG="${OPTARG#$OPT}"
+	    OPTARG="${OPTARG#=}"
 	fi
 	case "$OPT" in
 	    h | help)     	help ; exit 0 ;;
@@ -151,11 +166,11 @@ parse_opts() {
 	    a | audio)		audio=true ;;
 	    d | display)	display=true ;;
 	    w | webcam)		webcam=true ;;
-	    ??*)          	die "Illegal option --$OPT" ;;  # bad long option
-	    ?)            	exit 2 ;;  # bad short option (error reported via getopts)
+	    ??*)          	die "Illegal option --$OPT" ;;
+	    ?)            	exit 2 ;;
 	esac
     done
-    shift $((OPTIND-1)) # remove parsed options and args from $@ list
+    shift $((OPTIND-1))
 
     { [ -d "$1" ] && output_directory="$1"; } ||
     { [ -n "$1" ] && output_file="$1"; }
