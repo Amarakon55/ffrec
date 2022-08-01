@@ -139,8 +139,12 @@ parse_opts() {
     : "${config_file:=$config_dir/$(basename $0).conf}"
     [ -f "$config_file" ] && . "$config_file"
 
-    die() { printf "$*\n" >&2; exit 2; }
-    needs_arg() { [ -z "$OPTARG" ] && die "No arg for --$OPT option"; }
+    needs_arg() {
+	if [ -z "$OPTARG" ]; then
+	    printf '%s\n' "No arg for --$OPT option" >&2
+	    exit 2
+	fi
+    }
 
     while getopts hr:p:l:t:m:s:PeDadw-: OPT; do
 	# Support long options: https://stackoverflow.com/a/28466267/519360
@@ -166,7 +170,10 @@ parse_opts() {
 	    a | audio)		audio=true ;;
 	    d | display)	display=true ;;
 	    w | webcam)		webcam=true ;;
-	    ??*)          	die "Illegal option --$OPT" ;;
+	    ??*)
+		printf '%s\n' "Illegal option --$OPT" >&2
+		exit 2
+		;;
 	    ?)            	exit 2 ;;
 	esac
     done
