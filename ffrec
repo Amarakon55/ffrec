@@ -5,108 +5,108 @@ trap cleanup EXIT
 trap exit INT HUP TERM
 
 check() {
-    one="$1" two="$2"
-    [ -z "$one" ] && $one="$two"
+	one="$1" two="$2"
+	[ -z "$one" ] && $one="$two"
 }
 
 not_running() {
-    printf "$(basename $0) is not running so it cannot be "$@".\n" >&2
-    exit 1
+	printf "$(basename $0) is not running so it cannot be "$@".\n" >&2
+	exit 1
 }
 
 main() { parse_opts "$@"
-    [ -z $audio_encoder ] && audio_encoder="flac"
-    [ -z $audio_extension ] && audio_extension="$audio_encoder"
-    [ -z $video_encoder ] && video_encoder="libx264"
-    [ -z $video_extension ] && video_extension="mkv"
-    [ -z $rate ] && rate=60
-    [ -z $preset ] && preset="medium"
-    [ -z "$output_directory" ] && output_directory=~/.local/share/$(basename $0)
-    [ -z "$title" ] && title="%F_%R:%S"
-    title="$(date +$title)"
-    newt="ffmpeg-$title"
-    [ -z $monitor ] && monitor=$(printmon)
-    mon=$(randr $monitor)
-    [ -z $size ] && size="$(xrandr | grep primary |
-	cut -d " " -f 4 | cut -d + -f 1)"
+	[ -z $audio_encoder ] && audio_encoder="flac"
+	[ -z $audio_extension ] && audio_extension="$audio_encoder"
+	[ -z $video_encoder ] && video_encoder="libx264"
+	[ -z $video_extension ] && video_extension="mkv"
+	[ -z $rate ] && rate=60
+	[ -z $preset ] && preset="medium"
+	[ -z "$output_directory" ] && output_directory=~/.local/share/$(basename $0)
+	[ -z "$title" ] && title="%F_%R:%S"
+	title="$(date +$title)"
+	newt="ffmpeg-$title"
+	[ -z $monitor ] && monitor=$(printmon)
+	mon=$(randr $monitor)
+	[ -z $size ] && size="$(xrandr | grep primary |
+		cut -d " " -f 4 | cut -d + -f 1)"
 
-    ffmpegcheck="$(pgrep --exact ffmpeg | wc -l)"
-    ffmpegcheckid="$(pgrep --exact ffmpeg | tail -1)"
+	ffmpegcheck="$(pgrep --exact ffmpeg | wc -l)"
+	ffmpegcheckid="$(pgrep --exact ffmpeg | tail -1)"
 
-    if [ "$pause" = true ]; then
-	if [ "$ffmpegcheck" -ge 1 ]; then
-	    ffmpegpause="$(grep State /proc/$ffmpegcheckid/status |
-		cut -d '(' -f2 | cut -d ')' -f1)"
-	else not_running "paused"; fi
+	if [ "$pause" = true ]; then
+		if [ "$ffmpegcheck" -ge 1 ]; then
+			ffmpegpause="$(grep State /proc/$ffmpegcheckid/status |
+				cut -d '(' -f2 | cut -d ')' -f1)"
+		else not_running "paused"; fi
 
-	if [ "$ffmpegpause" = "stopped" ]; then pkill -CONT --exact ffmpeg
-	else pkill -STOP --exact ffmpeg; fi
-    elif [ "$end" = true ]; then
-	if [ "$ffmpegcheck" -ge 1 ]; then
-	    pkill --exact ffmpeg & kill $$ & rm -f /tmp/ffmpeg-*
-	else not_running "ended"; fi
-    elif [ "$dmenu" = true ]; then
-	dmenu="$(printf "audio\ndisplay\nwebcam" | dmenu -i -p FFrec)"
-	if [ "$dmenu" = "audio" ]; then record_audio
-	elif [ "$dmenu" = "display" ]; then record_display
-	elif [ $(printf "$dmenu" | grep -E "audio|display" | wc -l) -eq 2 ]; then
-	    record_both
-	elif [ "$dmenu" = "webcam" ]; then record_webcam
-	elif [ $(printf "$dmenu" | grep -E "audio|webcam" | wc -l) -eq 2 ]; then
-	    record_audiocam
-	fi
-    elif [ "$audio" = true -a "$display" = true ]; then record_both
-    elif [ "$audio" = true -a "$webcam" = true ]; then record_audiocam
-    elif [ "$audio" = true ]; then record_audio
-    elif [ "$display" = true ]; then record_display
-    elif [ "$webcam" = true ]; then record_webcam
-    else help ; exit 1; fi
+		if [ "$ffmpegpause" = "stopped" ]; then pkill -CONT --exact ffmpeg
+		else pkill -STOP --exact ffmpeg; fi
+	elif [ "$end" = true ]; then
+		if [ "$ffmpegcheck" -ge 1 ]; then
+			pkill --exact ffmpeg & kill $$ & rm -f /tmp/ffmpeg-*
+		else not_running "ended"; fi
+	elif [ "$dmenu" = true ]; then
+		dmenu="$(printf "audio\ndisplay\nwebcam" | dmenu -i -p FFrec)"
+		if [ "$dmenu" = "audio" ]; then record_audio
+		elif [ "$dmenu" = "display" ]; then record_display
+		elif [ $(printf "$dmenu" | grep -E "audio|display" | wc -l) -eq 2 ]
+		then record_both
+		elif [ "$dmenu" = "webcam" ]; then record_webcam
+		elif [ $(printf "$dmenu" | grep -E "audio|webcam" | wc -l) -eq 2 ]; then
+			record_audiocam
+		fi
+	elif [ "$audio" = true -a "$display" = true ]; then record_both
+	elif [ "$audio" = true -a "$webcam" = true ]; then record_audiocam
+	elif [ "$audio" = true ]; then record_audio
+	elif [ "$display" = true ]; then record_display
+	elif [ "$webcam" = true ]; then record_webcam
+	else help ; exit 1; fi
 }
 
 record_base() {
-    TMPFILE=$(mktemp -t $newt.XXXXXXX)
+	TMPFILE=$(mktemp -t $newt.XXXXXXX)
 
-    newd="$output_directory/$1"
-    [ ! -d $newd ] && mkdir -p $newd
-    [ -z "$output_file" ] && output_file="$newd/$newt.$2"
+	newd="$output_directory/$1"
+	[ ! -d $newd ] && mkdir -p $newd
+	[ -z "$output_file" ] && output_file="$newd/$newt.$2"
 
-    cmd -hide_banner -c:v $video_encoder -r $rate -c:a $audio_encoder -preset $preset "$output_file" 2> $TMPFILE &\
-    while [ -f $TMPFILE ]; do
-	printf "\r$(cat -A $TMPFILE | tr " " "\n" | grep time= | tail -1 |
-	    awk -F time= {'print $2'} | cut -d '.' -f 1)"
-	sleep .001
-    done
+	cmd -hide_banner -c:v $video_encoder -r $rate -c:a $audio_encoder -preset $preset "$output_file" 2> $TMPFILE &\
+		while [ -f $TMPFILE ]; do
+			printf "\r$(cat -A $TMPFILE | tr " " "\n" | grep time= | tail -1 |
+				awk -F time= {'print $2'} | cut -d '.' -f 1)"
+			sleep .001
+		done
 }
 
 record_audio() {
-    cmd() { ffmpeg -n -f alsa -i default "$@"; }
-    record_base Audio $audio_extension
+	cmd() { ffmpeg -n -f alsa -i default "$@"; }
+	record_base Audio $audio_extension
 }
 
 record_display() {
-    cmd() { ffmpeg -n -f x11grab -s "$size" -i "$mon" "$@"; }
-    record_base Display $video_extension
+	cmd() { ffmpeg -n -f x11grab -s "$size" -i "$mon" "$@"; }
+	record_base Display $video_extension
 }
 
 record_both() {
-    cmd() { ffmpeg -n -f alsa -i default -f x11grab -s "$size" -i "$mon" "$@"; }
-    record_base Display $video_extension
+	cmd() { ffmpeg -n -f alsa -i default -f x11grab -s "$size" -i "$mon" "$@"; }
+	record_base Display $video_extension
 }
 
 record_webcam(){
-    cmd() { ffmpeg -n -f v4l2 -i /dev/video0 "$@"; }
-    record_base Webcam $video_extension
+	cmd() { ffmpeg -n -f v4l2 -i /dev/video0 "$@"; }
+	record_base Webcam $video_extension
 }
 
 record_audiocam(){
-    cmd() { ffmpeg -n -f alsa -i default -f v4l2 -i /dev/video0 "$@"; }
-    record_base Webcam $video_extension
+	cmd() { ffmpeg -n -f alsa -i default -f v4l2 -i /dev/video0 "$@"; }
+	record_base Webcam $video_extension
 }
 
 randr() {
-    printf ":0.0+$(xrandr | grep ' connected' | sed 's/ primary//g' |
-	tail -$(expr $@ + 1) | head -1 |
-	awk -F '+' '{print $2","$3}' | cut -d ' ' -f 1)"
+	printf ":0.0+$(xrandr | grep ' connected' | sed 's/ primary//g' |
+		tail -$(expr $@ + 1) | head -1 |
+			awk -F '+' '{print $2","$3}' | cut -d ' ' -f 1)"
 }
 
 help() { printf 'Usage:\t%s' "$(basename $0) [options] [arguments]
@@ -135,52 +135,53 @@ Options:
 "; }
 
 parse_opts() {
-    : "${config_dir:=${XDG_CONFIG_HOME:-$HOME/.config}/$(basename $0)}"
-    : "${config_file:=$config_dir/$(basename $0).conf}"
-    [ -f "$config_file" ] && . "$config_file"
+	: "${config_dir:=${XDG_CONFIG_HOME:-$HOME/.config}/$(basename $0)}"
+	: "${config_file:=$config_dir/$(basename $0).conf}"
+	[ -f "$config_file" ] && . "$config_file"
 
-    needs_arg() {
-	if [ -z "$OPTARG" ]; then
-	    printf '%s\n' "No arg for --$OPT option" >&2
-	    exit 2
+	needs_arg() {
+		if [ -z "$OPTARG" ]; then
+			printf '%s\n' "No arg for --$OPT option" >&2
+			exit 2
+		fi
+	}
+
+	while getopts hr:p:l:t:m:s:PeDadw-: OPT; do
+		# Support long options: https://stackoverflow.com/a/28466267/519360
+		if [ "$OPT" = "-" ]; then
+			OPT="${OPTARG%%=*}"
+			OPTARG="${OPTARG#$OPT}"
+			OPTARG="${OPTARG#=}"
+		fi
+		case "$OPT" in
+			h | help) help ; exit 0 ;;
+			audio-encoder) needs_arg ; audio_encoder="$OPTARG" ;;
+			video-encoder) needs_arg ; video_encoder="$OPTARG" ;;
+			audio-extension) needs_arg ; audio_extension="$OPTARG" ;;
+			video-extension) needs_arg ; video_extension="$OPTARG" ;;
+			r | rate) needs_arg ; rate="$OPTARG" ;;
+			p | preset) needs_arg ; preset="$OPTARG" ;;
+			t | title) needs_arg ; title="$OPTARG" ;;
+			m | monitor) needs_arg ; monitor="$OPTARG" ;;
+			s | size) needs_arg ; size="$OPTARG" ;;
+			P | pause) pause=true ;;
+			e | end) end=true ;;
+			D | dmenu) dmenu=true ;;
+			a | audio) audio=true ;;
+			d | display) display=true ;;
+			w | webcam) webcam=true ;;
+			??*)
+				printf '%s\n' "Illegal option --$OPT" >&2
+				exit 2
+				;;
+			?) exit 2 ;;
+		esac
+	done
+	shift $((OPTIND-1))
+
+	if [ -d "$1" ]; then output_directory="$1"
+	elif [ -n "$1" ]; then output_file="$1"
 	fi
-    }
-
-    while getopts hr:p:l:t:m:s:PeDadw-: OPT; do
-	# Support long options: https://stackoverflow.com/a/28466267/519360
-	if [ "$OPT" = "-" ]; then
-	    OPT="${OPTARG%%=*}"
-	    OPTARG="${OPTARG#$OPT}"
-	    OPTARG="${OPTARG#=}"
-	fi
-	case "$OPT" in
-	    h | help)     	help ; exit 0 ;;
-	    audio-encoder)	needs_arg ; audio_encoder="$OPTARG" ;;
-	    video-encoder)	needs_arg ; video_encoder="$OPTARG" ;;
-	    audio-extension)	needs_arg ; audio_extension="$OPTARG" ;;
-	    video-extension)	needs_arg ; video_extension="$OPTARG" ;;
-	    r | rate)		needs_arg ; rate="$OPTARG" ;;
-	    p | preset)		needs_arg ; preset="$OPTARG" ;;
-	    t | title)		needs_arg ; title="$OPTARG" ;;
-	    m | monitor)	needs_arg ; monitor="$OPTARG" ;;
-	    s | size)		needs_arg ; size="$OPTARG" ;;
-	    P | pause)		pause=true ;;
-	    e | end)		end=true ;;
-	    D | dmenu)		dmenu=true ;;
-	    a | audio)		audio=true ;;
-	    d | display)	display=true ;;
-	    w | webcam)		webcam=true ;;
-	    ??*)
-		printf '%s\n' "Illegal option --$OPT" >&2
-		exit 2
-		;;
-	    ?)            	exit 2 ;;
-	esac
-    done
-    shift $((OPTIND-1))
-
-    { [ -d "$1" ] && output_directory="$1"; } ||
-    { [ -n "$1" ] && output_file="$1"; }
 }
 
 main "$@"
